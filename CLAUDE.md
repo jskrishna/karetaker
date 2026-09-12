@@ -47,6 +47,33 @@ Do not copy the directory back into the site repo. If the symlink is lost, recre
 
     ln -s ~/karetaker "~/Local Sites/spice-web-media/app/public/wp-content/plugins/karetaker"
 
+## The site is not yours to change
+
+Two agents work on two repos and they must never write to the same thing. **This repo is
+yours. `~/Local Sites/spice-web-media` is not** — it is built by Claude Code in its own repo,
+and an edit made here to a file over there is exactly the conflict this split exists to
+prevent.
+
+**Open Cursor on this directory, not on the site.** That is most of the guarantee: a folder
+that is not in the workspace cannot be edited by accident.
+
+**To read the site, use `.reference/spice-web-media/`.** It is a narrow snapshot — the theme,
+the mu-plugins, `CLAUDE.md`, and the security and performance docs, 151 files — and it is
+**`chmod a-w`, so the filesystem itself refuses writes**. It is a copy, not a link: editing it
+would change nothing in the real site even if it were writable. Refresh it with
+`tools/sync-reference.sh` whenever the site has moved on.
+
+`wp-config.php` is deliberately not in the snapshot; it holds the database credentials, and a
+security plugin's repo is the last place they should be copied to.
+
+**The one thing worth reading there first is `spice-hardening.php`.** It is a site mu-plugin
+doing a narrower version of this plugin's job — headers, XML-RPC, author scanning, a login
+throttle — so it is both a working reference and the thing to avoid duplicating.
+
+**Testing does not depend on any of this.** `wp-content/plugins/karetaker` in that install is a
+symlink to this directory, so the plugin is live in a real site with real content the moment you
+save a file. Nothing needs copying anywhere for it to run.
+
 ## Before submission
 
 - **There is no `readme.txt` yet.** The directory will not accept the plugin without one, and it
