@@ -23,7 +23,7 @@ It is deliberately **not**:
 * a login lockout / hide-login product by default
 * a writer of `wp-config.php`, `.htaccess`, or server config
 
-Visibility is pull (Tools → Karetaker, WP-CLI, optional signed REST status). Notification is push (email on ACT-severity events). Hardening is off until you turn each toggle on.
+Visibility is pull (Karetaker admin screen, WP-CLI, optional signed REST status). Notification is push (email on ACT-severity events). Hardening is off until you turn each toggle on.
 
 An optional agency status endpoint (`/wp-json/karetaker/v1/status`) is off until you generate a token. The token never grants remote control — status only.
 
@@ -33,7 +33,7 @@ Kill switch: define `KARETAKER_DISABLE` as true, or place an empty file at `wp-c
 
 1. Upload the `karetaker` folder to `/wp-content/plugins/`, or install the zip via Plugins → Add New → Upload.
 2. Activate through the Plugins screen.
-3. Open Tools → Karetaker to review overview, activity, harden toggles, and settings (alert email, trusted proxies, agency token).
+3. Open Karetaker in the admin sidebar to review overview, activity, harden toggles, and settings (alert email, trusted proxies, agency token).
 
 == Frequently Asked Questions ==
 
@@ -43,7 +43,7 @@ No. Karetaker watches and alerts. It does not filter HTTP traffic.
 
 = Will it lock me out of wp-login? =
 
-Not by default. There is no login lockout or renamed login URL in the default set. Hardening toggles are opt-in and reversible from Tools → Karetaker → Harden.
+Not by default. There is no login lockout or renamed login URL in the default set. Hardening toggles are opt-in and reversible from Karetaker → Harden.
 
 = How do I stop it immediately? =
 
@@ -56,6 +56,13 @@ It unlocks a read-only JSON status endpoint for monitoring scripts. Empty token 
 = Does uninstall leave data behind? =
 
 No. Uninstall drops the events table, plugin options, and cron hooks.
+
+== Screenshots ==
+
+1. Overview — product intro, last scan, Guard flags, and event counts.
+2. Activity — the events log with Log/Watch/Act-now labels and readable context.
+3. Harden — opt-in toggles with Desired vs Live now receipts.
+4. Settings — alert email, trusted proxies, and agency token controls.
 
 == Changelog ==
 

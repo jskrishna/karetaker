@@ -321,8 +321,11 @@ class Karetaker_Events {
 	 *     @type int         $limit        Max rows (1–500, default 50).
 	 *     @type int         $offset       Row offset (default 0).
 	 *     @type int|null    $min_severity Minimum severity inclusive.
+	 *     @type int|null    $severity     Exact severity match.
 	 *     @type string      $code         Exact event_code filter.
 	 *     @type string      $since        Minimum event_time (MySQL datetime).
+	 *     @type string      $until        Maximum event_time (MySQL datetime).
+	 *     @type string      $search       Substring match on code or context JSON.
 	 * }
 	 * @return array<int, object> Hydrated event rows.
 	 */
@@ -335,16 +338,78 @@ class Karetaker_Events {
 				'limit'        => 50,
 				'offset'       => 0,
 				'min_severity' => null,
+				'severity'     => null,
 				'code'         => '',
 				'since'        => '',
+				'until'        => '',
+				'search'       => '',
 			)
 		);
 
-		$table  = Karetaker_Schema::table();
+		list( $where, $params ) = self::where_clause( $args );
+
+		$params[] = max( 1, min( 500, (int) $args['limit'] ) );
+		$params[] = max( 0, (int) $args['offset'] );
+
+		$table = Karetaker_Schema::table();
+		$sql   = 'SELECT * FROM ' . $table . ' WHERE ' . implode( ' AND ', $where ) . ' ORDER BY id DESC LIMIT %d OFFSET %d';
+
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
+
+		return array_map( array( __CLASS__, 'hydrate' ), $rows ? $rows : array() );
+	}
+
+	/**
+	 * Counts events matching the same filters as query() (no limit/offset).
+	 *
+	 * @since 0.1.0
+	 * @param array<string, mixed> $args Filter arguments (see query()).
+	 * @return int
+	 */
+	public static function count_filtered( array $args = array() ) {
+		global $wpdb;
+
+		$args = wp_parse_args(
+			$args,
+			array(
+				'min_severity' => null,
+				'severity'     => null,
+				'code'         => '',
+				'since'        => '',
+				'until'        => '',
+				'search'       => '',
+			)
+		);
+
+		list( $where, $params ) = self::where_clause( $args );
+
+		$table = Karetaker_Schema::table();
+		$sql   = 'SELECT COUNT(*) FROM ' . $table . ' WHERE ' . implode( ' AND ', $where );
+
+		if ( empty( $params ) ) {
+			return (int) $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+
+		return (int) $wpdb->get_var( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
+	}
+
+	/**
+	 * Builds WHERE fragments and prepare params for event queries.
+	 *
+	 * @since 0.1.0
+	 * @param array<string, mixed> $args Filter arguments.
+	 * @return array{0: string[], 1: array<int|string>}
+	 */
+	private static function where_clause( array $args ) {
+		global $wpdb;
+
 		$where  = array( '1=1' );
 		$params = array();
 
-		if ( null !== $args['min_severity'] ) {
+		if ( null !== $args['severity'] ) {
+			$where[]  = 'severity = %d';
+			$params[] = (int) $args['severity'];
+		} elseif ( null !== $args['min_severity'] ) {
 			$where[]  = 'severity >= %d';
 			$params[] = (int) $args['min_severity'];
 		}
@@ -359,15 +424,19 @@ class Karetaker_Events {
 			$params[] = $args['since'];
 		}
 
-		$params[] = max( 1, min( 500, (int) $args['limit'] ) );
-		$params[] = max( 0, (int) $args['offset'] );
+		if ( '' !== $args['until'] ) {
+			$where[]  = 'event_time <= %s';
+			$params[] = $args['until'];
+		}
 
-		$sql = 'SELECT * FROM ' . $table . ' WHERE ' . implode( ' AND ', $where ) . ' ORDER BY id DESC LIMIT %d OFFSET %d';
+		if ( '' !== $args['search'] ) {
+			$like     = '%' . $wpdb->esc_like( (string) $args['search'] ) . '%';
+			$where[]  = '( event_code LIKE %s OR context LIKE %s )';
+			$params[] = $like;
+			$params[] = $like;
+		}
 
-		// $table is esc_sql()-safe from Schema::table(); placeholders cover the rest.
-		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
-
-		return array_map( array( __CLASS__, 'hydrate' ), $rows ? $rows : array() );
+		return array( $where, $params );
 	}
 
 	/**

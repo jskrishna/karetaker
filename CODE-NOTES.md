@@ -16,7 +16,15 @@ section omitted until assets exist. Spec/plan:
 `docs/superpowers/specs/2026-09-13-karetaker-wporg-prep-design.md`,
 `docs/superpowers/plans/2026-09-13-karetaker-wporg-prep.md`.
 
+## `assets/`
+
+WordPress.org SVN assets (not shipped in the plugin zip): `banner-1544x500.png`,
+`banner-772x250.png`, `icon-256x256.png`, `icon-128x128.png`, `screenshot-1.png`…
+`screenshot-4.png`. Captured from Karetaker admin tabs on 2026-09-13 (refresh after admin UI redesign). Listed in
+`.distignore`.
+
 ## Dist / Plugin Check
+
 
 `.distignore` lists files that must not enter a WordPress.org zip (Composer, PHPCS,
 agent markdown, docs, vendor). Plugin Check against the live symlink will flag those;
@@ -392,7 +400,7 @@ not mail again for the same shape within a day — that is the whole scarcity mo
 switch is checked again here even though `record()` already bails when disabled, because an
 event recorded *before* the file appeared could still be mid-flight in the same request.
 
-**The body points at Tools → Karetaker Settings to turn alerts off.** There is no separate
+**The body points at Karetaker → Settings to turn alerts off.** There is no separate
 unsubscribe token or public endpoint — that would be a new attack surface for a plugin whose
 job is to shrink surface area. Settings copy is enough for a site the owner can still reach;
 if they cannot reach it, the kill-switch file is the out-of-band path.
@@ -466,26 +474,52 @@ absent (REST 404) while disabled. Contrast empty-token (route present, auth fail
 **CLI status stays unsigned.** SSH output should stay simple; only the HTTP response
 carries `sig`.
 
+## `includes/class-guidance.php`
+
+**Act-now is a severity, not an in-plugin “Fix” button.** Karetaker does not auto-remediate
+compromise or mail failures. The Activity drawer loads `Karetaker_Guidance::for_event()` so
+the owner sees title, summary, numbered next steps, and a deep link (Users, Reading, Plugins,
+etc.). JSON stays under a collapsed “Technical details” block.
+
+---
+
+## Pro admin UI (2026-09-13)
+
+**Custom app shell under `.karetaker-app` / `.kt-shell`** — watchtower tokens, pill nav, posture metrics, partials in `includes/admin/partials/`. Not wp-admin `nav-tab` / `widefat` styling. Assets: `assets/admin.css`, `assets/admin.js`, `menu-icon.svg` (shipped in dist zip).
+
+**Overview:** Run scan (`admin_post_karetaker_run_scan` → `Karetaker_Scanner::run()`), next cron time, Site Health link, slice list.
+
+**Activity:** GET filters (`kt_sev`, `kt_code`, `kt_since`, `kt_until`, `kt_s`), CSV export (`karetaker_export_events`, cap 5000), row drawer via JS, user display names. Query/count extended in `Karetaker_Events::where_clause()`.
+
+**Harden:** Grouped toggle cards partial. **Settings:** ACT webhook (optional, `Karetaker_Webhook` on `karetaker_event_recorded`, HMAC header). **Site Health:** `Karetaker_Site_Health::test_scan_fresh`, stale = 36h.
+
+---
+
 ## `includes/class-admin.php`
 
-**The screen lives under Tools (`add_management_page`), not a top-level admin menu.** A
-security plugin that adds its own sidebar icon on every client site trains agencies to ignore
-yet another badge; Tools is where "look at the log / change the email" belongs for a plugin
-that is meant to stay quiet. Capability is `manage_options` end to end — menu, render, and
-`admin_post` save — and the save handler checks the nonce before touching settings.
+**Top-level menu at position 80 (`add_menu_page`), not Tools.** Position 80 sits near Plugins /
+Tools so agencies can find it without another top-of-sidebar badge. Capability stays
+`manage_options` end to end — menu, render, and `admin_post` save — and save handlers check
+the nonce before touching settings. Internal links and redirects use
+`admin_page_url()` → `admin.php?page=karetaker`. Legacy `tools.php?page=karetaker`
+bookmarks soft-redirect on `admin_init`.
+
+**Page chrome is header + tabs + footer.** Header: shipped `assets/menu-icon.svg` + title +
+tagline. Footer: `Karetaker v{version} · by Team Krikir` on every tab (no About tab).
+Overview carries the product intro card and status grid; kill-switch notice shows there too.
+
+**Admin CSS only on our hook.** `enqueue_assets()` loads `assets/admin.css` when
+`$hook === toplevel_page_karetaker`. No front-end enqueue anywhere — logged-out home stays
+zero plugin assets. Directory marketing PNGs (`banner-*`, `icon-*`, `screenshot-*`) stay out
+of the plugin zip via `.distignore` / `build-dist.sh`; `admin.css` and `menu-icon.svg` ship.
 
 **Harden has its own tab and `admin_post_karetaker_save_harden` form.** Settings stays focused
-on alerts, proxies and row cap; each Harden checkbox change logs `setting_changed` with
-`option` = `harden.{key}` only when the value actually flipped.
+on alerts, proxies and row cap (section cards for scanability); each Harden checkbox change
+logs `setting_changed` with `option` = `harden.{key}` only when the value actually flipped.
 
 **Agency token actions are separate `admin_post` handlers**, not part of Save settings. The
 plaintext token is shown once via a user-keyed transient (`karetaker_agency_token_once_{uid}`),
 never stuffed into the redirect query string. Overview only shows Off/On.
-
-**No front-end assets are enqueued, from this class or anywhere else in the plugin.** The
-admin UI is plain `wrap` markup and core list-table styles. A public CSS/JS bundle would be a
-permanent front-end cost for a product whose stated budget is zero queries and zero assets on
-the logged-out home page.
 
 **`class-admin.php` (and the list table) load only inside `is_admin()` in `karetaker_boot()`.**
 Guard and Alerts still `require` / `init` on every request so option hooks and
@@ -494,10 +528,12 @@ UI-only and has no business on that path.
 
 ## `includes/class-list-table.php`
 
-**Every column goes through `esc_html`, including context rendered as JSON.** The activity
-log deliberately stores attacker-controlled strings; an unescaped viewer is the most likely
-XSS this plugin will ever ship (see the events section). Severity and user id are cast before
-escape so a weird DB type cannot slip markup through.
+**Severity renders as Log / Watch / Act-now badges** mapped from `SEVERITY_LOG` /
+`SEVERITY_ATTENTION` / `SEVERITY_ACT`. Context shows a short key=value summary from known
+keys; full JSON stays on the `title` attribute only. Cell text still goes through `esc_html`
+/ `esc_attr` — the activity log stores attacker-controlled strings; an unescaped viewer is
+the most likely XSS this plugin will ever ship (see the events section). Severity and user
+id are cast before escape so a weird DB type cannot slip markup through.
 
 **The User column is the numeric `user_id`, not a display name.** Resolving logins on every
 row would add per-page user lookups to a screen that already runs `COUNT(*)` for pagination,

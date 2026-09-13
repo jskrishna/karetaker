@@ -44,6 +44,8 @@ require_once KARETAKER_DIR . 'includes/class-checksums.php';
 require_once KARETAKER_DIR . 'includes/class-scanner.php';
 require_once KARETAKER_DIR . 'includes/class-guard.php';
 require_once KARETAKER_DIR . 'includes/class-alerts.php';
+require_once KARETAKER_DIR . 'includes/class-guidance.php';
+require_once KARETAKER_DIR . 'includes/class-webhook.php';
 require_once KARETAKER_DIR . 'includes/class-harden.php';
 require_once KARETAKER_DIR . 'includes/class-status.php';
 require_once KARETAKER_DIR . 'includes/class-agency.php';
@@ -88,13 +90,16 @@ function karetaker_boot() {
 	Karetaker_Scanner::init();
 	Karetaker_Guard::init();
 	Karetaker_Alerts::init();
+	Karetaker_Webhook::init();
 	Karetaker_Harden::init();
 	Karetaker_Agency::init();
 
 	if ( is_admin() ) {
 		require_once KARETAKER_DIR . 'includes/class-admin.php';
 		require_once KARETAKER_DIR . 'includes/class-list-table.php';
+		require_once KARETAKER_DIR . 'includes/class-site-health.php';
 		Karetaker_Admin::init();
+		Karetaker_Site_Health::init();
 	}
 }
 add_action( 'plugins_loaded', 'karetaker_boot' );

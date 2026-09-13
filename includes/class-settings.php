@@ -52,6 +52,9 @@ class Karetaker_Settings {
 				'app_passwords' => false,
 			),
 			'agency_token'     => '',
+			'webhook_enabled'  => false,
+			'webhook_url'      => '',
+			'webhook_secret'   => '',
 		);
 	}
 

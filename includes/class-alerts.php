@@ -144,7 +144,7 @@ class Karetaker_Alerts {
 	 */
 	public static function body_for( $code, array $context, $id ) {
 		$home  = home_url( '/' );
-		$tools = admin_url( 'tools.php?page=karetaker' );
+		$tools = admin_url( 'admin.php?page=karetaker' );
 
 		$lines   = array();
 		$lines[] = self::subject_for( $code, $context );

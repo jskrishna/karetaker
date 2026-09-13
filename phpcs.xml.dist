@@ -8,6 +8,7 @@
 	<exclude-pattern>*/.superpowers/*</exclude-pattern>
 	<exclude-pattern>*/tools/*</exclude-pattern>
 	<exclude-pattern>*/docs/*</exclude-pattern>
+	<exclude-pattern>*/includes/admin/partials/*</exclude-pattern>
 
 	<arg name="extensions" value="php"/>
 	<arg name="basepath" value="."/>

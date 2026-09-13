@@ -42,3 +42,15 @@ wp --path="$HOME/Local Sites/spice-web-media/app/public" plugin check karetaker 
 ```
 
 For a fair .org preview, rsync with `.distignore` into a temporary plugin folder first.
+
+## Slug re-check (step 2)
+
+2026-09-13 06:09 UTC: API `plugin_information` for `karetaker` still **404 Plugin not found**; directory page also unavailable. Slug remains free.
+
+## Upload package (step 3)
+
+Built with `tools/build-dist.sh` → `dist/karetaker-0.1.0.zip`.
+- Dev files excluded (same as `.distignore`).
+- `Update URI: false` stripped **in the zip only**; working tree still has it.
+- Assets stay in `assets/` for SVN `/assets`, not inside the zip.
+- Actual WordPress.org submission still needs a human (account + SVN/upload UI).

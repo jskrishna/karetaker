@@ -20,3 +20,7 @@ tools
 tests
 .phpunit*
 .phpcs*
+assets/banner-*.png
+assets/icon-*.png
+assets/screenshot-*.png
+dist

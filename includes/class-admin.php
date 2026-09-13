@@ -1,6 +1,6 @@
 <?php
 /**
- * Tools → Karetaker admin UI.
+ * Karetaker admin UI.
  *
  * @package Karetaker
  */
@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Tools → Karetaker admin UI and save handlers.
+ * Karetaker admin UI and save handlers.
  *
  * @since 0.1.0
  * @package Karetaker
@@ -29,7 +29,11 @@ class Karetaker_Admin {
 	 */
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
+		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'admin_init', array( __CLASS__, 'maybe_redirect_legacy_tools' ) );
 		add_action( 'admin_post_karetaker_save_settings', array( __CLASS__, 'handle_save_settings' ) );
+		add_action( 'admin_post_karetaker_run_scan', array( __CLASS__, 'handle_run_scan' ) );
+		add_action( 'admin_post_karetaker_export_events', array( __CLASS__, 'handle_export_events' ) );
 		add_action( 'admin_post_karetaker_save_harden', array( __CLASS__, 'handle_save_harden' ) );
 		add_action( 'admin_post_karetaker_agency_generate', array( __CLASS__, 'handle_agency_generate' ) );
 		add_action( 'admin_post_karetaker_agency_regenerate', array( __CLASS__, 'handle_agency_regenerate' ) );
@@ -39,19 +43,94 @@ class Karetaker_Admin {
 	}
 
 	/**
-	 * Adds Tools → Karetaker for users with manage_options.
+	 * Adds the top-level Karetaker menu for users with manage_options.
 	 *
 	 * @since 0.1.0
 	 * @return void
 	 */
 	public static function register_menu() {
-		add_management_page(
+		add_menu_page(
 			__( 'Karetaker', 'karetaker' ),
 			__( 'Karetaker', 'karetaker' ),
 			'manage_options',
 			self::PAGE_SLUG,
-			array( __CLASS__, 'render_page' )
+			array( __CLASS__, 'render_page' ),
+			'dashicons-shield-alt',
+			80
 		);
+	}
+
+	/**
+	 * Enqueues admin CSS on the Karetaker page only.
+	 *
+	 * @since 0.1.0
+	 * @param string $hook Current admin page hook.
+	 * @return void
+	 */
+	public static function enqueue_assets( $hook ) {
+		if ( 'toplevel_page_' . self::PAGE_SLUG !== $hook ) {
+			return;
+		}
+
+		wp_enqueue_style( 'dashicons' );
+
+		$path = KARETAKER_DIR . 'assets/admin.css';
+		wp_enqueue_style(
+			'karetaker-admin',
+			plugins_url( 'assets/admin.css', KARETAKER_FILE ),
+			array( 'dashicons' ),
+			file_exists( $path ) ? (string) filemtime( $path ) : KARETAKER_VERSION
+		);
+
+		$js_path = KARETAKER_DIR . 'assets/admin.js';
+		wp_enqueue_script(
+			'karetaker-admin',
+			plugins_url( 'assets/admin.js', KARETAKER_FILE ),
+			array(),
+			file_exists( $js_path ) ? (string) filemtime( $js_path ) : KARETAKER_VERSION,
+			true
+		);
+	}
+
+	/**
+	 * Builds an admin.php URL for the Karetaker screen.
+	 *
+	 * @since 0.1.0
+	 * @param string $tab Optional tab slug.
+	 * @return string
+	 */
+	public static function admin_page_url( $tab = '' ) {
+		$args = array( 'page' => self::PAGE_SLUG );
+		if ( '' !== $tab ) {
+			$args['tab'] = sanitize_key( $tab );
+		}
+		return add_query_arg( $args, admin_url( 'admin.php' ) );
+	}
+
+	/**
+	 * Soft-redirects legacy Tools → Karetaker bookmarks to admin.php.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
+	public static function maybe_redirect_legacy_tools() {
+		if ( ! is_admin() || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		global $pagenow;
+		if ( 'tools.php' !== $pagenow ) {
+			return;
+		}
+
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( self::PAGE_SLUG !== $page ) {
+			return;
+		}
+
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		wp_safe_redirect( self::admin_page_url( $tab ) );
+		exit;
 	}
 
 	/**
@@ -72,7 +151,7 @@ class Karetaker_Admin {
 	}
 
 	/**
-	 * Renders the Karetaker Tools page shell and active tab.
+	 * Renders the Karetaker admin page shell and active tab.
 	 *
 	 * @since 0.1.0
 	 * @return void
@@ -84,21 +163,69 @@ class Karetaker_Admin {
 
 		$tab = self::current_tab();
 		?>
-		<div class="wrap">
-			<h1><?php echo esc_html__( 'Karetaker', 'karetaker' ); ?></h1>
-			<?php self::render_tabs( $tab ); ?>
-			<?php
-			if ( 'settings' === $tab ) {
-				self::render_settings();
-			} elseif ( 'activity' === $tab ) {
-				self::render_activity();
-			} elseif ( 'harden' === $tab ) {
-				self::render_harden();
-			} else {
-				self::render_overview();
-			}
-			?>
+		<div class="wrap karetaker-wrap karetaker-app">
+			<div class="kt-shell">
+				<?php self::render_header(); ?>
+				<?php self::render_tabs( $tab ); ?>
+				<div class="kt-body">
+					<?php self::maybe_inline_notices(); ?>
+					<?php
+					if ( 'settings' === $tab ) {
+						self::render_settings();
+					} elseif ( 'activity' === $tab ) {
+						self::render_activity();
+					} elseif ( 'harden' === $tab ) {
+						self::render_harden();
+					} else {
+						self::render_overview();
+					}
+					?>
+				</div>
+				<?php self::render_footer(); ?>
+			</div>
 		</div>
+		<?php
+	}
+
+	/**
+	 * Outputs the branded page header.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
+	private static function render_header() {
+		?>
+		<header class="kt-brand">
+			<div class="kt-brand__mark" aria-hidden="true">
+				<span class="dashicons dashicons-shield-alt"></span>
+			</div>
+			<div>
+				<h1 class="kt-brand__title"><?php echo esc_html__( 'Karetaker', 'karetaker' ); ?></h1>
+				<p class="kt-brand__tagline"><?php echo esc_html__( 'A watchtower for WordPress.', 'karetaker' ); ?></p>
+			</div>
+		</header>
+		<?php
+	}
+
+	/**
+	 * Outputs the small footer credit.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
+	private static function render_footer() {
+		?>
+		<p class="kt-footer">
+			<?php
+			echo esc_html(
+				sprintf(
+					/* translators: %s: plugin version */
+					__( 'Karetaker v%s · by Team Krikir', 'karetaker' ),
+					KARETAKER_VERSION
+				)
+			);
+			?>
+		</p>
 		<?php
 	}
 
@@ -110,27 +237,63 @@ class Karetaker_Admin {
 	 * @return void
 	 */
 	private static function render_tabs( $current ) {
-		$base   = admin_url( 'tools.php?page=' . self::PAGE_SLUG );
-		$labels = array(
-			'overview' => __( 'Overview', 'karetaker' ),
-			'activity' => __( 'Activity', 'karetaker' ),
-			'harden'   => __( 'Harden', 'karetaker' ),
-			'settings' => __( 'Settings', 'karetaker' ),
+		$base = self::admin_page_url();
+		$tabs = array(
+			'overview' => array(
+				'label' => __( 'Overview', 'karetaker' ),
+				'icon'  => 'dashicons-dashboard',
+			),
+			'activity' => array(
+				'label' => __( 'Activity', 'karetaker' ),
+				'icon'  => 'dashicons-list-view',
+			),
+			'harden'   => array(
+				'label' => __( 'Harden', 'karetaker' ),
+				'icon'  => 'dashicons-lock',
+			),
+			'settings' => array(
+				'label' => __( 'Settings', 'karetaker' ),
+				'icon'  => 'dashicons-admin-generic',
+			),
 		);
 		?>
-		<nav class="nav-tab-wrapper" aria-label="<?php echo esc_attr__( 'Karetaker sections', 'karetaker' ); ?>">
-			<?php foreach ( $labels as $slug => $label ) : ?>
-				<a
-					href="<?php echo esc_url( add_query_arg( 'tab', $slug, $base ) ); ?>"
-					class="nav-tab<?php echo $slug === $current ? ' nav-tab-active' : ''; ?>"
-				><?php echo esc_html( $label ); ?></a>
-			<?php endforeach; ?>
+		<nav aria-label="<?php echo esc_attr__( 'Karetaker sections', 'karetaker' ); ?>">
+			<ul class="kt-nav">
+				<?php foreach ( $tabs as $slug => $tab ) : ?>
+					<li>
+						<a
+							href="<?php echo esc_url( add_query_arg( 'tab', $slug, $base ) ); ?>"
+							class="kt-nav__link<?php echo $slug === $current ? ' is-active' : ''; ?>"
+						>
+							<span class="dashicons <?php echo esc_attr( $tab['icon'] ); ?>" aria-hidden="true"></span>
+							<?php echo esc_html( $tab['label'] ); ?>
+						</a>
+					</li>
+				<?php endforeach; ?>
+			</ul>
 		</nav>
 		<?php
 	}
 
 	/**
-	 * Renders the Overview tab summary table.
+	 * Inline success and scan notices inside the app shell.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
+	private static function maybe_inline_notices() {
+		if ( ! empty( $_GET['scan_done'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			?>
+			<div class="kt-alert kt-alert--success">
+				<span class="dashicons dashicons-yes-alt" aria-hidden="true"></span>
+				<span><?php echo esc_html__( 'Scan completed. Results are updated below.', 'karetaker' ); ?></span>
+			</div>
+			<?php
+		}
+	}
+
+	/**
+	 * Renders the Overview intro and status cards.
 	 *
 	 * @since 0.1.0
 	 * @return void
@@ -150,87 +313,40 @@ class Karetaker_Admin {
 		);
 		$act_count = count( $act_rows );
 		$total     = Karetaker_Schema::count();
-		?>
-		<div class="karetaker-overview" style="max-width:720px;margin-top:1em;">
-			<table class="widefat striped">
-				<tbody>
-					<tr>
-						<th scope="row"><?php echo esc_html__( 'Last scan', 'karetaker' ); ?></th>
-						<td>
-							<?php
-							if ( '' === $last_run ) {
-								echo esc_html__( 'Never', 'karetaker' );
-							} else {
-								echo esc_html( $last_run . ' UTC' );
-							}
-							?>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php echo esc_html__( 'Last scan results', 'karetaker' ); ?></th>
-						<td>
-							<?php if ( empty( $results ) ) : ?>
-								<?php echo esc_html__( 'None yet', 'karetaker' ); ?>
-							<?php else : ?>
-								<ul style="margin:0;">
-									<?php foreach ( $results as $scan => $status ) : ?>
-										<li>
-											<code><?php echo esc_html( (string) $scan ); ?></code>:
-											<?php echo esc_html( (string) $status ); ?>
-										</li>
-									<?php endforeach; ?>
-								</ul>
-							<?php endif; ?>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php echo esc_html__( 'Guard flags', 'karetaker' ); ?></th>
-						<td>
-							<ul style="margin:0;">
-								<?php foreach ( Karetaker_Guard::CHECKS as $check ) : ?>
-									<?php
-									$entry       = isset( $guard[ $check ] ) && is_array( $guard[ $check ] ) ? $guard[ $check ] : array();
-									$bad         = ! empty( $entry['bad'] );
-									$since_check = ( $bad && ! empty( $entry['since'] ) ) ? (string) $entry['since'] : '';
-									?>
-									<li>
-										<code><?php echo esc_html( $check ); ?></code>:
-										<?php
-										echo $bad
-											? esc_html__( 'bad', 'karetaker' )
-											: esc_html__( 'ok', 'karetaker' );
-										if ( $since_check ) {
-											/* translators: %s: MySQL UTC datetime */
-											echo ' ' . esc_html( sprintf( __( '(since %s UTC)', 'karetaker' ), $since_check ) );
-										}
-										?>
-									</li>
-								<?php endforeach; ?>
-							</ul>
-						</td>
-					</tr>
-					<tr>
-						<th scope="row"><?php echo esc_html__( 'ACT events this week', 'karetaker' ); ?></th>
-						<td><?php echo esc_html( (string) $act_count ); ?></td>
-					</tr>
-					<tr>
-						<th scope="row"><?php echo esc_html__( 'Events stored', 'karetaker' ); ?></th>
-						<td><?php echo esc_html( (string) $total ); ?></td>
-					</tr>
-					<tr>
-						<th scope="row"><?php echo esc_html__( 'Agency channel', 'karetaker' ); ?></th>
-						<td>
-							<?php
-							echo '' === Karetaker_Settings::agency_token()
-								? esc_html__( 'Off', 'karetaker' )
-								: esc_html__( 'On', 'karetaker' );
-							?>
-						</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-		<?php
+		$next_scan = wp_next_scheduled( Karetaker_Scanner::CRON_HOOK );
+
+		$bad_count = 0;
+		foreach ( Karetaker_Guard::CHECKS as $check ) {
+			$entry = isset( $guard[ $check ] ) && is_array( $guard[ $check ] ) ? $guard[ $check ] : array();
+			if ( ! empty( $entry['bad'] ) ) {
+				++$bad_count;
+			}
+		}
+
+		if ( '' === $last_run ) {
+			$last_scan_label   = __( 'Never', 'karetaker' );
+			$metric_scan_class = 'is-warn';
+		} else {
+			$last_ts           = strtotime( $last_run . ' UTC' );
+			$last_scan_label   = human_time_diff( $last_ts, time() ) . ' ' . __( 'ago', 'karetaker' );
+			$metric_scan_class = ( time() - $last_ts ) > Karetaker_Site_Health::STALE_SECONDS ? 'is-warn' : 'is-ok';
+		}
+
+		if ( $bad_count ) {
+			$guard_label = sprintf(
+				/* translators: %d: number of bad guard checks */
+				_n( '%d flag bad', '%d flags bad', $bad_count, 'karetaker' ),
+				$bad_count
+			);
+			$metric_guard_class = 'is-bad';
+		} else {
+			$guard_label        = __( 'All ok', 'karetaker' );
+			$metric_guard_class = 'is-ok';
+		}
+
+		$metric_act_class = $act_count > 0 ? 'is-bad' : 'is-ok';
+
+		include KARETAKER_DIR . 'includes/admin/partials/overview.php';
 	}
 
 	/**
@@ -242,11 +358,26 @@ class Karetaker_Admin {
 	private static function render_activity() {
 		$table = new Karetaker_List_Table();
 		$table->prepare_items();
-		?>
-		<div style="margin-top:1em;">
-			<?php $table->display(); ?>
-		</div>
-		<?php
+
+		$filters       = Karetaker_List_Table::filter_args_from_request();
+		$filter_sev    = isset( $_GET['kt_sev'] ) ? sanitize_key( wp_unslash( $_GET['kt_sev'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$filter_code   = isset( $filters['code'] ) ? (string) $filters['code'] : '';
+		$filter_since  = ! empty( $filters['since'] ) ? substr( (string) $filters['since'], 0, 10 ) : '';
+		$filter_until  = ! empty( $filters['until'] ) ? substr( (string) $filters['until'], 0, 10 ) : '';
+		$filter_search = isset( $filters['search'] ) ? (string) $filters['search'] : '';
+
+		$export_url = wp_nonce_url(
+			add_query_arg(
+				array(
+					'action' => 'karetaker_export_events',
+				),
+				admin_url( 'admin-post.php' )
+			),
+			'karetaker_export_events'
+		);
+		$export_url = add_query_arg( Karetaker_List_Table::filter_query_for_url( $filters ), $export_url );
+
+		include KARETAKER_DIR . 'includes/admin/partials/activity.php';
 	}
 
 	/**
@@ -256,59 +387,14 @@ class Karetaker_Admin {
 	 * @return void
 	 */
 	private static function render_harden() {
-		$desired = Karetaker_Harden::desired();
-		$meta    = self::harden_field_meta();
+		$desired       = Karetaker_Harden::desired();
+		$meta          = self::harden_field_meta();
+		$harden_groups = array(
+			__( 'Headers & exposure', 'karetaker' ) => array( 'headers', 'xmlrpc', 'version' ),
+			__( 'Access & accounts', 'karetaker' )  => array( 'file_editor', 'user_enum', 'registration', 'app_passwords' ),
+		);
 
-		if ( karetaker_is_disabled() ) {
-			?>
-			<div class="notice notice-error">
-				<p><?php echo esc_html__( 'Karetaker is disabled (kill switch). Harden toggles are not applying.', 'karetaker' ); ?></p>
-			</div>
-			<?php
-		}
-		?>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:1em;max-width:960px;">
-			<input type="hidden" name="action" value="karetaker_save_harden" />
-			<?php wp_nonce_field( 'karetaker_save_harden' ); ?>
-			<table class="widefat striped" style="margin-top:1em;">
-				<thead>
-					<tr>
-						<th scope="col"><?php echo esc_html__( 'Toggle', 'karetaker' ); ?></th>
-						<th scope="col"><?php echo esc_html__( 'Desired', 'karetaker' ); ?></th>
-						<th scope="col"><?php echo esc_html__( 'Live now', 'karetaker' ); ?></th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php foreach ( Karetaker_Harden::KEYS as $key ) : ?>
-						<?php
-						$label = isset( $meta[ $key ]['label'] ) ? $meta[ $key ]['label'] : $key;
-						$help  = isset( $meta[ $key ]['help'] ) ? $meta[ $key ]['help'] : '';
-						$id    = 'karetaker_harden_' . $key;
-						?>
-						<tr>
-							<th scope="row">
-								<label for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $label ); ?></label>
-								<?php if ( '' !== $help ) : ?>
-									<p class="description"><?php echo esc_html( $help ); ?></p>
-								<?php endif; ?>
-							</th>
-							<td>
-								<input
-									type="checkbox"
-									id="<?php echo esc_attr( $id ); ?>"
-									name="harden[<?php echo esc_attr( $key ); ?>]"
-									value="1"
-									<?php checked( ! empty( $desired[ $key ] ) ); ?>
-								/>
-							</td>
-							<td><?php echo esc_html( Karetaker_Harden::probe( $key ) ); ?></td>
-						</tr>
-					<?php endforeach; ?>
-				</tbody>
-			</table>
-			<?php submit_button( __( 'Save Harden settings', 'karetaker' ) ); ?>
-		</form>
-		<?php
+		include KARETAKER_DIR . 'includes/admin/partials/harden.php';
 	}
 
 	/**
@@ -357,18 +443,26 @@ class Karetaker_Admin {
 	 * @return void
 	 */
 	private static function render_settings() {
-		$settings     = Karetaker_Settings::all();
-		$email        = isset( $settings['alert_email'] ) ? (string) $settings['alert_email'] : '';
-		$enabled      = ! empty( $settings['alerts_enabled'] );
-		$row_cap      = Karetaker_Settings::row_cap();
-		$proxies      = isset( $settings['trusted_proxies'] ) && is_array( $settings['trusted_proxies'] )
+		$settings        = Karetaker_Settings::all();
+		$email           = isset( $settings['alert_email'] ) ? (string) $settings['alert_email'] : '';
+		$enabled         = ! empty( $settings['alerts_enabled'] );
+		$row_cap         = Karetaker_Settings::row_cap();
+		$proxies         = isset( $settings['trusted_proxies'] ) && is_array( $settings['trusted_proxies'] )
 			? $settings['trusted_proxies']
 			: array();
-		$proxies_text = implode( "\n", array_map( 'strval', $proxies ) );
+		$proxies_text    = implode( "\n", array_map( 'strval', $proxies ) );
+		$webhook_enabled = ! empty( $settings['webhook_enabled'] );
+		$webhook_url     = isset( $settings['webhook_url'] ) ? (string) $settings['webhook_url'] : '';
+		$webhook_secret  = isset( $settings['webhook_secret'] ) ? (string) $settings['webhook_secret'] : '';
 		?>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:1em;max-width:640px;">
+		<form class="karetaker-settings-form" method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="karetaker_save_settings" />
 			<?php wp_nonce_field( 'karetaker_save_settings' ); ?>
+			<div class="kt-panel kt-form-table">
+				<div class="kt-panel__head">
+					<span class="dashicons dashicons-email-alt" aria-hidden="true"></span>
+					<h2><?php echo esc_html__( 'Alerts', 'karetaker' ); ?></h2>
+				</div>
 			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row">
@@ -403,6 +497,14 @@ class Karetaker_Admin {
 						</label>
 					</td>
 				</tr>
+			</table>
+			</div>
+			<div class="kt-panel kt-form-table">
+				<div class="kt-panel__head">
+					<span class="dashicons dashicons-database" aria-hidden="true"></span>
+					<h2><?php echo esc_html__( 'Event retention', 'karetaker' ); ?></h2>
+				</div>
+			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row">
 						<label for="karetaker_row_cap"><?php echo esc_html__( 'Event row cap', 'karetaker' ); ?></label>
@@ -432,6 +534,14 @@ class Karetaker_Admin {
 						</p>
 					</td>
 				</tr>
+			</table>
+			</div>
+			<div class="kt-panel kt-form-table">
+				<div class="kt-panel__head">
+					<span class="dashicons dashicons-networking" aria-hidden="true"></span>
+					<h2><?php echo esc_html__( 'Trusted proxies', 'karetaker' ); ?></h2>
+				</div>
+			<table class="form-table" role="presentation">
 				<tr>
 					<th scope="row">
 						<label for="karetaker_trusted_proxies"><?php echo esc_html__( 'Trusted proxies', 'karetaker' ); ?></label>
@@ -449,7 +559,42 @@ class Karetaker_Admin {
 					</td>
 				</tr>
 			</table>
-			<?php submit_button( __( 'Save settings', 'karetaker' ) ); ?>
+			</div>
+			<div class="kt-panel kt-form-table">
+				<div class="kt-panel__head">
+					<span class="dashicons dashicons-share" aria-hidden="true"></span>
+					<h2><?php echo esc_html__( 'ACT webhook', 'karetaker' ); ?></h2>
+				</div>
+				<p class="description" style="margin:12px 16px 0;"><?php echo esc_html__( 'Optional: POST act-now events to your endpoint (single attempt, HMAC-SHA256 when secret is set).', 'karetaker' ); ?></p>
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row"><?php echo esc_html__( 'Enable webhook', 'karetaker' ); ?></th>
+						<td>
+							<label for="karetaker_webhook_enabled">
+								<input type="checkbox" id="karetaker_webhook_enabled" name="webhook_enabled" value="1" <?php checked( $webhook_enabled ); ?> />
+								<?php echo esc_html__( 'Send ACT events to webhook URL', 'karetaker' ); ?>
+							</label>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="karetaker_webhook_url"><?php echo esc_html__( 'Webhook URL', 'karetaker' ); ?></label></th>
+						<td><input type="url" class="large-text" id="karetaker_webhook_url" name="webhook_url" value="<?php echo esc_attr( $webhook_url ); ?>" /></td>
+					</tr>
+					<tr>
+						<th scope="row"><label for="karetaker_webhook_secret"><?php echo esc_html__( 'Signing secret', 'karetaker' ); ?></label></th>
+						<td>
+							<input type="password" class="regular-text" id="karetaker_webhook_secret" name="webhook_secret" value="<?php echo esc_attr( $webhook_secret ); ?>" autocomplete="new-password" />
+							<p class="description"><?php echo esc_html__( 'Sent as X-Karetaker-Signature: sha256=… over the JSON body.', 'karetaker' ); ?></p>
+						</td>
+					</tr>
+				</table>
+			</div>
+			<div class="kt-sticky-save">
+				<button type="submit" class="kt-btn kt-btn--primary">
+					<span class="dashicons dashicons-saved" aria-hidden="true"></span>
+					<?php echo esc_html__( 'Save settings', 'karetaker' ); ?>
+				</button>
+			</div>
 		</form>
 		<?php self::render_agency_settings(); ?>
 		<?php
@@ -466,16 +611,23 @@ class Karetaker_Admin {
 		$has        = '' !== $token;
 		$status_url = rest_url( 'karetaker/v1/status' );
 		?>
-		<hr style="margin:2em 0 1.5em;" />
-		<h2><?php echo esc_html__( 'Agency channel', 'karetaker' ); ?></h2>
-		<p class="description">
-			<?php echo esc_html__( 'Read-only signed status for remote monitoring. Empty token keeps the channel off.', 'karetaker' ); ?>
-		</p>
+		<div class="kt-panel">
+			<div class="kt-panel__head">
+				<span class="dashicons dashicons-rest-api" aria-hidden="true"></span>
+				<h2><?php echo esc_html__( 'Agency channel', 'karetaker' ); ?></h2>
+			</div>
+			<div class="kt-panel__body">
+			<p class="description">
+				<?php echo esc_html__( 'Read-only signed status for remote monitoring. Empty token keeps the channel off.', 'karetaker' ); ?>
+			</p>
 		<?php if ( ! $has ) : ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 				<input type="hidden" name="action" value="karetaker_agency_generate" />
 				<?php wp_nonce_field( 'karetaker_agency_token' ); ?>
-				<?php submit_button( __( 'Generate token', 'karetaker' ), 'secondary', 'submit', false ); ?>
+				<button type="submit" class="kt-btn kt-btn--primary">
+					<span class="dashicons dashicons-admin-network" aria-hidden="true"></span>
+					<?php echo esc_html__( 'Generate token', 'karetaker' ); ?>
+				</button>
 			</form>
 		<?php else : ?>
 			<table class="form-table" role="presentation">
@@ -500,18 +652,115 @@ class Karetaker_Admin {
 					</td>
 				</tr>
 			</table>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline-block;margin-right:0.5em;">
-				<input type="hidden" name="action" value="karetaker_agency_regenerate" />
-				<?php wp_nonce_field( 'karetaker_agency_token' ); ?>
-				<?php submit_button( __( 'Regenerate', 'karetaker' ), 'secondary', 'submit', false ); ?>
-			</form>
-			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline-block;">
-				<input type="hidden" name="action" value="karetaker_agency_clear" />
-				<?php wp_nonce_field( 'karetaker_agency_token' ); ?>
-				<?php submit_button( __( 'Clear', 'karetaker' ), 'delete', 'submit', false ); ?>
-			</form>
+			<div class="kt-actions">
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<input type="hidden" name="action" value="karetaker_agency_regenerate" />
+					<?php wp_nonce_field( 'karetaker_agency_token' ); ?>
+					<button type="submit" class="kt-btn kt-btn--secondary">
+						<span class="dashicons dashicons-update" aria-hidden="true"></span>
+						<?php echo esc_html__( 'Regenerate', 'karetaker' ); ?>
+					</button>
+				</form>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<input type="hidden" name="action" value="karetaker_agency_clear" />
+					<?php wp_nonce_field( 'karetaker_agency_token' ); ?>
+					<button type="submit" class="kt-btn kt-btn--secondary">
+						<span class="dashicons dashicons-trash" aria-hidden="true"></span>
+						<?php echo esc_html__( 'Clear', 'karetaker' ); ?>
+					</button>
+				</form>
+			</div>
 		<?php endif; ?>
+			</div>
+		</div>
 		<?php
+	}
+
+	/**
+	 * Runs a full scan from the admin UI.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
+	public static function handle_run_scan() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to run scans.', 'karetaker' ) );
+		}
+
+		check_admin_referer( 'karetaker_run_scan' );
+
+		Karetaker_Scanner::run();
+
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'      => self::PAGE_SLUG,
+					'tab'       => 'overview',
+					'scan_done' => '1',
+				),
+				admin_url( 'admin.php' )
+			)
+		);
+		exit;
+	}
+
+	/**
+	 * Exports filtered events as CSV.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
+	public static function handle_export_events() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to export events.', 'karetaker' ) );
+		}
+
+		check_admin_referer( 'karetaker_export_events' );
+
+		$filters = Karetaker_List_Table::filter_args_from_request();
+		$rows    = Karetaker_Events::query(
+			array_merge(
+				$filters,
+				array(
+					'limit'  => 5000,
+					'offset' => 0,
+				)
+			)
+		);
+
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename=karetaker-events.csv' );
+
+		$out = fopen( 'php://output', 'w' );
+		if ( false === $out ) {
+			exit;
+		}
+
+		fputcsv( $out, array( 'id', 'event_time', 'severity', 'event_code', 'user_id', 'ip', 'context' ) );
+
+		foreach ( $rows as $row ) {
+			$context = is_array( $row->context ) ? $row->context : array();
+			$json    = wp_json_encode( $context );
+			if ( false === $json ) {
+				$json = '{}';
+			}
+			fputcsv(
+				$out,
+				array(
+					(int) $row->id,
+					(string) $row->event_time,
+					(int) $row->severity,
+					(string) $row->event_code,
+					(int) $row->user_id,
+					(string) $row->ip_display,
+					$json,
+				)
+			);
+		}
+
+		fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+		exit;
 	}
 
 	/**
@@ -545,12 +794,19 @@ class Karetaker_Admin {
 			: '';
 		$proxies     = self::sanitize_proxy_lines( $proxies_raw );
 
+		$webhook_enabled = ! empty( $_POST['webhook_enabled'] );
+		$webhook_url     = isset( $_POST['webhook_url'] ) ? esc_url_raw( wp_unslash( $_POST['webhook_url'] ) ) : '';
+		$webhook_secret  = isset( $_POST['webhook_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['webhook_secret'] ) ) : '';
+
 		Karetaker_Settings::update(
 			array(
 				'alert_email'     => $email,
 				'alerts_enabled'  => (bool) $enabled,
 				'row_cap'         => $row_cap,
 				'trusted_proxies' => $proxies,
+				'webhook_enabled' => (bool) $webhook_enabled,
+				'webhook_url'     => $webhook_url,
+				'webhook_secret'  => $webhook_secret,
 			)
 		);
 
@@ -567,7 +823,7 @@ class Karetaker_Admin {
 					'tab'             => 'settings',
 					'karetaker_saved' => '1',
 				),
-				admin_url( 'tools.php' )
+				admin_url( 'admin.php' )
 			)
 		);
 		exit;
@@ -624,7 +880,7 @@ class Karetaker_Admin {
 					'tab'     => 'harden',
 					'updated' => '1',
 				),
-				admin_url( 'tools.php' )
+				admin_url( 'admin.php' )
 			)
 		);
 		exit;
@@ -702,7 +958,7 @@ class Karetaker_Admin {
 					'page' => self::PAGE_SLUG,
 					'tab'  => 'settings',
 				),
-				admin_url( 'tools.php' )
+				admin_url( 'admin.php' )
 			)
 		);
 		exit;

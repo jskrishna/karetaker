@@ -76,8 +76,8 @@ save a file. Nothing needs copying anywhere for it to run.
 
 ## Before submission
 
-- **`readme.txt` is in place** (Stable tag 0.1.0, Tested up to 7.1). Add screenshots/banner
-  assets when you have them; the Screenshots section is omitted until then.
+- **`readme.txt` is in place** (Stable tag 0.1.0, Tested up to 7.1).
+- **Directory assets** live in `assets/` (banner, icon, screenshots 1–4) — SVN `/assets` only, excluded from the plugin zip via `.distignore`.
 - **Docblock backlog is done** for plugin PHP (file/class/method `@param` / `@return`). Keep
   new methods documented the same way; design rationale still lives in `CODE-NOTES.md`.
 - **Remove `Update URI: false` from `karetaker.php` immediately before the first .org upload**
