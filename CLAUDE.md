@@ -83,7 +83,9 @@ save a file. Nothing needs copying anywhere for it to run.
 - **Remove `Update URI: false` from `karetaker.php` immediately before the first .org upload**
   (keep it while distributing by hand — see `CODE-NOTES.md`).
 - **WPCS pass is clean** (`composer install && composer phpcs`).
-- **Plugin Check** on a `.distignore` package: only remaining ERROR is `Update URI: false` (strip at upload). See `docs/audits/2026-09-13-plugin-check.md`.
+- **Plugin Check** on the release zip (`tools/build-dist.sh`): **0 ERROR** after stripping
+  `Update URI` in the staged package. See `docs/audits/2026-09-13-plugin-check.md`.
+  Working-tree `Update URI: false` is intentional until you stop hand-distributing.
 - Re-run WPCS / Plugin Check after PHP changes.
 - Confirm the slug is still free before the first upload; `karetaker` was confirmed free on
   2026-09-13 and a name can be taken between then and submission.

@@ -1,56 +1,38 @@
-# Plugin Check — 2026-09-13
+# Plugin Check — 2026-09-13 (final .org prep)
 
-Ran against a **clean dist copy** (dev files excluded) via Plugin Check 2.1.0 on Local
-(`spice-web-media.local`). Live symlink tree also smoke-tested.
+Ran against **`dist/karetaker-0.1.0.zip`** unpacked as `karetaker-pcp` on Local
+(`spice-web-media.local`), Plugin Check 2.1.0. Working tree still has
+`Update URI: false`; the zip strips it via `tools/build-dist.sh`.
 
 ## Slug
 
 `https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request[slug]=karetaker`
-→ **404 Plugin not found** — slug still free.
+→ `{"error":"Plugin not found."}` — **still free** (re-checked 2026-09-13 12:56 IST).
 
-## CLI smoke (symlink install)
+## Package
 
-- `wp karetaker status` — OK (version 0.1.0, harden defaults off)
-- `wp karetaker scan --budget=5` — OK
-- `wp karetaker emit` / `log` — OK
-
-## Clean-package findings
-
-### Errors (1)
-
-| Code | Meaning | Action |
-|---|---|---|
-| `plugin_updater_detected` | `Update URI: false` in header | **Remove only at first .org upload** (keep while hand-distributing) |
-
-### Warnings (expected / accepted)
-
-| Code | Notes |
+| Check | Result |
 |---|---|
-| `WordPress.DB.DirectDatabaseQuery.*` | Own events table — product, not a bug |
-| `PluginCheck.Security.DirectDB.UnescapedDBParameter` | Mitigated: `Schema::table()` uses `esc_sql()`; query builder still prepares values |
-| (cleared) `load_plugin_textdomainFound` | Removed — .org auto-loads under the slug |
+| Zip | `dist/karetaker-0.1.0.zip` (~58K) |
+| `Update URI` in zip | absent |
+| Banner/icon/screenshots in zip | absent (SVN `/assets` only) |
+| Plugin Check ERROR | **0** |
+| Plugin Check WARNING | 22 (Direct DB family — accepted) |
+| WPCS (`composer phpcs`) | clean |
 
-### Repo-only noise (not in dist)
+## Upload checklist (human)
 
-`phpcs.xml.dist`, `composer.*`, `CLAUDE.md`, `CODE-NOTES.md`, `.gitignore` — excluded by `.distignore`.
+1. WordPress.org plugin author account (Contributors: `teamkrikir` must match).
+2. Re-confirm slug free the day you upload.
+3. Upload **`~/karetaker/dist/karetaker-0.1.0.zip`** via Plugins → Add New (or SVN `trunk`).
+4. After the plugin is approved / SVN exists, commit directory assets to **`/assets`** (not trunk):
+   - `banner-1544x500.png`, `banner-772x250.png`
+   - `icon-128x128.png`, `icon-256x256.png`
+   - `screenshot-1.png` … `screenshot-4.png` (captions already in `readme.txt`)
+5. Keep `Update URI: false` in the **git** working tree until you decide to distribute only via .org; every release zip from `tools/build-dist.sh` already omits it.
 
-## How to re-run
+## Do not
 
-```bash
-ln -sfn "$HOME/Library/Application Support/Local/run/VtIo8OKoV/mysql/mysqld.sock" /tmp/mysql.sock
-wp --path="$HOME/Local Sites/spice-web-media/app/public" plugin check karetaker --slug=karetaker
-```
-
-For a fair .org preview, rsync with `.distignore` into a temporary plugin folder first.
-
-## Slug re-check (step 2)
-
-2026-09-13 06:09 UTC: API `plugin_information` for `karetaker` still **404 Plugin not found**; directory page also unavailable. Slug remains free.
-
-## Upload package (step 3)
-
-Built with `tools/build-dist.sh` → `dist/karetaker-0.1.0.zip`.
-- Dev files excluded (same as `.distignore`).
-- `Update URI: false` stripped **in the zip only**; working tree still has it.
-- Assets stay in `assets/` for SVN `/assets`, not inside the zip.
-- Actual WordPress.org submission still needs a human (account + SVN/upload UI).
+- Upload the live symlink tree or a zip that still contains `Update URI: false`.
+- Put marketing PNGs inside the plugin zip.
+- Bump to 1.0.0 for the first upload — Stable tag is `0.1.0`.
