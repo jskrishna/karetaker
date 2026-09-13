@@ -19,7 +19,11 @@ class Karetaker_Admin {
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
 		add_action( 'admin_post_karetaker_save_settings', array( __CLASS__, 'handle_save_settings' ) );
 		add_action( 'admin_post_karetaker_save_harden', array( __CLASS__, 'handle_save_harden' ) );
+		add_action( 'admin_post_karetaker_agency_generate', array( __CLASS__, 'handle_agency_generate' ) );
+		add_action( 'admin_post_karetaker_agency_regenerate', array( __CLASS__, 'handle_agency_regenerate' ) );
+		add_action( 'admin_post_karetaker_agency_clear', array( __CLASS__, 'handle_agency_clear' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'maybe_settings_notice' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'maybe_agency_token_notice' ) );
 	}
 
 	public static function register_menu() {
@@ -168,6 +172,16 @@ class Karetaker_Admin {
 					<tr>
 						<th scope="row"><?php echo esc_html__( 'Events stored', 'karetaker' ); ?></th>
 						<td><?php echo esc_html( (string) $total ); ?></td>
+					</tr>
+					<tr>
+						<th scope="row"><?php echo esc_html__( 'Agency channel', 'karetaker' ); ?></th>
+						<td>
+							<?php
+							echo '' === Karetaker_Settings::agency_token()
+								? esc_html__( 'Off', 'karetaker' )
+								: esc_html__( 'On', 'karetaker' );
+							?>
+						</td>
 					</tr>
 				</tbody>
 			</table>
@@ -369,6 +383,60 @@ class Karetaker_Admin {
 			</table>
 			<?php submit_button( __( 'Save settings', 'karetaker' ) ); ?>
 		</form>
+		<?php self::render_agency_settings(); ?>
+		<?php
+	}
+
+	private static function render_agency_settings() {
+		$token = Karetaker_Settings::agency_token();
+		$has   = '' !== $token;
+		$status_url = rest_url( 'karetaker/v1/status' );
+		?>
+		<hr style="margin:2em 0 1.5em;" />
+		<h2><?php echo esc_html__( 'Agency channel', 'karetaker' ); ?></h2>
+		<p class="description">
+			<?php echo esc_html__( 'Read-only signed status for remote monitoring. Empty token keeps the channel off.', 'karetaker' ); ?>
+		</p>
+		<?php if ( ! $has ) : ?>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="karetaker_agency_generate" />
+				<?php wp_nonce_field( 'karetaker_agency_token' ); ?>
+				<?php submit_button( __( 'Generate token', 'karetaker' ), 'secondary', 'submit', false ); ?>
+			</form>
+		<?php else : ?>
+			<table class="form-table" role="presentation">
+				<tr>
+					<th scope="row"><?php echo esc_html__( 'Current token', 'karetaker' ); ?></th>
+					<td>
+						<code><?php echo esc_html( Karetaker_Agency::mask_token( $token ) ); ?></code>
+						<p class="description">
+							<?php
+							echo esc_html__(
+								'Copy the full token from the one-time notice after generate or regenerate. It is not shown again.',
+								'karetaker'
+							);
+							?>
+						</p>
+						<p class="description">
+							<code>Authorization: Bearer &lt;token&gt;</code>
+						</p>
+						<p class="description">
+							<code>curl -H "Authorization: Bearer TOKEN" <?php echo esc_html( $status_url ); ?></code>
+						</p>
+					</td>
+				</tr>
+			</table>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline-block;margin-right:0.5em;">
+				<input type="hidden" name="action" value="karetaker_agency_regenerate" />
+				<?php wp_nonce_field( 'karetaker_agency_token' ); ?>
+				<?php submit_button( __( 'Regenerate', 'karetaker' ), 'secondary', 'submit', false ); ?>
+			</form>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="display:inline-block;">
+				<input type="hidden" name="action" value="karetaker_agency_clear" />
+				<?php wp_nonce_field( 'karetaker_agency_token' ); ?>
+				<?php submit_button( __( 'Clear', 'karetaker' ), 'delete', 'submit', false ); ?>
+			</form>
+		<?php endif; ?>
 		<?php
 	}
 
@@ -460,6 +528,91 @@ class Karetaker_Admin {
 			)
 		);
 		exit;
+	}
+
+	public static function handle_agency_generate() {
+		self::handle_agency_token_action( 'generated' );
+	}
+
+	public static function handle_agency_regenerate() {
+		self::handle_agency_token_action( 'regenerated' );
+	}
+
+	public static function handle_agency_clear() {
+		self::handle_agency_token_action( 'cleared' );
+	}
+
+	private static function handle_agency_token_action( $value ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to change the agency token.', 'karetaker' ) );
+		}
+
+		check_admin_referer( 'karetaker_agency_token' );
+
+		if ( 'cleared' === $value ) {
+			Karetaker_Settings::update( array( 'agency_token' => '' ) );
+			Karetaker_Events::record(
+				'setting_changed',
+				array(
+					'option' => 'agency_token',
+					'value'  => 'cleared',
+				)
+			);
+		} else {
+			$token = Karetaker_Agency::generate_token();
+			Karetaker_Settings::update( array( 'agency_token' => $token ) );
+			Karetaker_Events::record(
+				'setting_changed',
+				array(
+					'option' => 'agency_token',
+					'value'  => $value,
+				)
+			);
+			set_transient( self::agency_token_once_key(), $token, 60 );
+		}
+
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page' => self::PAGE_SLUG,
+					'tab'  => 'settings',
+				),
+				admin_url( 'tools.php' )
+			)
+		);
+		exit;
+	}
+
+	private static function agency_token_once_key() {
+		return 'karetaker_agency_token_once_' . get_current_user_id();
+	}
+
+	public static function maybe_agency_token_notice() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		if ( self::PAGE_SLUG !== $page ) {
+			return;
+		}
+
+		$key   = self::agency_token_once_key();
+		$token = get_transient( $key );
+		if ( false === $token || '' === (string) $token ) {
+			return;
+		}
+
+		delete_transient( $key );
+		?>
+		<div class="notice notice-warning">
+			<p>
+				<strong><?php echo esc_html__( 'Copy your agency token now.', 'karetaker' ); ?></strong>
+				<?php echo esc_html__( 'It will not be shown again.', 'karetaker' ); ?>
+			</p>
+			<p><code><?php echo esc_html( (string) $token ); ?></code></p>
+		</div>
+		<?php
 	}
 
 	public static function maybe_settings_notice() {

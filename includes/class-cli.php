@@ -60,22 +60,7 @@ class Karetaker_CLI {
 	 * Show plugin status as JSON.
 	 */
 	public function status() {
-		WP_CLI::line(
-			wp_json_encode(
-				array(
-					'version'    => KARETAKER_VERSION,
-					'disabled'   => karetaker_is_disabled(),
-					'events'     => Karetaker_Schema::count(),
-					'row_cap'    => Karetaker_Settings::row_cap(),
-					'table_size' => Karetaker_Schema::size_bytes(),
-					'last_scan'  => get_option( 'karetaker_last_scan', null ),
-					'harden'     => array(
-						'desired' => Karetaker_Settings::harden(),
-					),
-				),
-				JSON_PRETTY_PRINT
-			)
-		);
+		WP_CLI::line( wp_json_encode( Karetaker_Status::snapshot(), JSON_PRETTY_PRINT ) );
 	}
 
 	/**

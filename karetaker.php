@@ -39,6 +39,8 @@ require_once KARETAKER_DIR . 'includes/class-scanner.php';
 require_once KARETAKER_DIR . 'includes/class-guard.php';
 require_once KARETAKER_DIR . 'includes/class-alerts.php';
 require_once KARETAKER_DIR . 'includes/class-harden.php';
+require_once KARETAKER_DIR . 'includes/class-status.php';
+require_once KARETAKER_DIR . 'includes/class-agency.php';
 
 register_activation_hook( __FILE__, 'karetaker_activate' );
 register_deactivation_hook( __FILE__, 'karetaker_deactivate' );
@@ -63,6 +65,7 @@ function karetaker_boot() {
 	Karetaker_Guard::init();
 	Karetaker_Alerts::init();
 	Karetaker_Harden::init();
+	Karetaker_Agency::init();
 
 	if ( is_admin() ) {
 		require_once KARETAKER_DIR . 'includes/class-admin.php';

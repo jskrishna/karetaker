@@ -392,6 +392,43 @@ now cannot drift from a cached boolean.
 filters or defines register for that boot. The class file is still required at load so Admin /
 CLI can read Desired and explain inactivity.
 
+## `includes/class-status.php`
+
+**One snapshot builder for CLI and the agency REST route.** Both callers need the same fact
+shape; duplicating the guard normalisation / ACT-week count / events totals would drift.
+`snapshot()` returns the payload **without** `sig` — CLI prints it as-is; HTTP adds HMAC
+in `Karetaker_Agency::get_status()`.
+
+**Guard entries are reduced to `bad` + `since` only.** The scanner state can hold extra keys;
+the agency channel is a monitoring digest, not a dump of internal state.
+
+## `includes/class-agency.php`
+
+**Empty `agency_token` means the channel is off.** `permission_callback` returns false with
+no route-side hints; WordPress maps that to a generic forbidden (401/403). The route still
+registers when the token is empty — fail-closed auth, not conditional registration — so a
+poller always hits the same URL.
+
+**Auth accepts Bearer first, then `?token=`.** Neither path runs the token through
+`sanitize_key` (that would corrupt mixed-case secrets). Normalisation is
+`sanitize_text_field` plus a 256-char cap. Comparison is `hash_equals`.
+
+**HMAC is defense in depth after auth.** Canonical JSON is recursive `ksort` +
+`wp_json_encode` of the snapshot **without** `sig`; then
+`hash_hmac( 'sha256', $canonical, $token )`. Pollers that know the token can detect a
+tampered body from a cache or proxy.
+
+**HTTP never writes to the event log.** A status poll is traffic, not an incident; logging
+it would fill the retention window the same way per-request login logging would. Admin
+token lifecycle alone records `setting_changed` with `value=generated|regenerated|cleared`
+— never the raw secret.
+
+**Kill switch skips `Karetaker_Agency::init()`** (boot returns early), so the route is
+absent (REST 404) while disabled. Contrast empty-token (route present, auth fails).
+
+**CLI status stays unsigned.** SSH output should stay simple; only the HTTP response
+carries `sig`.
+
 ## `includes/class-admin.php`
 
 **The screen lives under Tools (`add_management_page`), not a top-level admin menu.** A
@@ -403,6 +440,10 @@ that is meant to stay quiet. Capability is `manage_options` end to end — menu,
 **Harden has its own tab and `admin_post_karetaker_save_harden` form.** Settings stays focused
 on alerts, proxies and row cap; each Harden checkbox change logs `setting_changed` with
 `option` = `harden.{key}` only when the value actually flipped.
+
+**Agency token actions are separate `admin_post` handlers**, not part of Save settings. The
+plaintext token is shown once via a user-keyed transient (`karetaker_agency_token_once_{uid}`),
+never stuffed into the redirect query string. Overview only shows Off/On.
 
 **No front-end assets are enqueued, from this class or anywhere else in the plugin.** The
 admin UI is plain `wrap` markup and core list-table styles. A public CSS/JS bundle would be a

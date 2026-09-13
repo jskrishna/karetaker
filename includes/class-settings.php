@@ -34,7 +34,12 @@ class Karetaker_Settings {
 				'registration'  => false,
 				'app_passwords' => false,
 			),
+			'agency_token'     => '',
 		);
+	}
+
+	public static function agency_token() {
+		return (string) self::get( 'agency_token' );
 	}
 
 	public static function harden() {
