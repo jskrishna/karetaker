@@ -26,3 +26,4 @@ foreach ( array( 'karetaker_scan', 'karetaker_digest' ) as $hook ) {
 
 delete_option( 'karetaker_baseline' );
 delete_option( 'karetaker_last_scan' );
+delete_option( 'karetaker_scan_state' );

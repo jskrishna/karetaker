@@ -61,7 +61,7 @@ class Karetaker_Scanner {
 		$state   = self::state();
 		$results = array();
 
-		foreach ( array( 'muplugins', 'uploads', 'cron', 'options', 'checksums' ) as $scan ) {
+		foreach ( array( 'muplugins', 'uploads', 'cron', 'options', 'guard', 'checksums' ) as $scan ) {
 			if ( self::out_of_time() ) {
 				$results[ $scan ] = 'skipped_no_time';
 				continue;
@@ -430,5 +430,9 @@ class Karetaker_Scanner {
 		);
 
 		return 'changed:' . count( $changed );
+	}
+
+	public static function scan_guard( &$state ) {
+		return Karetaker_Guard::scan( $state );
 	}
 }

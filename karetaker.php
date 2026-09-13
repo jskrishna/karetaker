@@ -36,6 +36,8 @@ require_once KARETAKER_DIR . 'includes/class-events.php';
 require_once KARETAKER_DIR . 'includes/class-hooks.php';
 require_once KARETAKER_DIR . 'includes/class-checksums.php';
 require_once KARETAKER_DIR . 'includes/class-scanner.php';
+require_once KARETAKER_DIR . 'includes/class-guard.php';
+require_once KARETAKER_DIR . 'includes/class-alerts.php';
 
 register_activation_hook( __FILE__, 'karetaker_activate' );
 register_deactivation_hook( __FILE__, 'karetaker_deactivate' );
@@ -57,6 +59,14 @@ function karetaker_boot() {
 	Karetaker_Events::init();
 	Karetaker_Hooks::init();
 	Karetaker_Scanner::init();
+	Karetaker_Guard::init();
+	Karetaker_Alerts::init();
+
+	if ( is_admin() ) {
+		require_once KARETAKER_DIR . 'includes/class-admin.php';
+		require_once KARETAKER_DIR . 'includes/class-list-table.php';
+		Karetaker_Admin::init();
+	}
 }
 add_action( 'plugins_loaded', 'karetaker_boot' );
 

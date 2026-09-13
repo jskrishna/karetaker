@@ -318,3 +318,75 @@ every plugin comes round in a few days.
 **Live results from the Spice site, 2026-09-13:** core 3,338 files / 0 modified, Elementor
 3,023 / 0, Yoast 1,964 / 0. A tampered `readme.txt` was detected and the file restored
 byte-identical.
+
+## `includes/class-guard.php`
+
+**A Guard trip is transition-only: bad ∧ ¬was_bad, never a sticky re-fire.** `evaluate()`
+compares the new condition against the flag stored in `karetaker_scan_state['guard'][$check]`
+and only calls `Karetaker_Events::record( 'guard_tripped', … )` on the rising edge. Once a
+check is already bad, cron and hooks keep refreshing `bad` / `since` but write no more rows —
+otherwise a discouraged-search-engines site would emit `guard_tripped` on every scan forever
+and burn the ACT alert budget on noise. Clearing the condition resets the edge so a later
+re-trip is a real new event.
+
+**Mail is `wp_mail_failed` only — not a successful send, not SMTP probes, not a custom
+transport.** The research failure mode was plugins that treat "we tried mail" as evidence and
+then spam the owner whenever the host's mailer is merely slow. Hooking the failure action
+means the check lights up when WordPress itself reports that delivery failed, and the sticky
+`mail_failed` flag in scan state keeps the Overview honest until something clears it; the
+event still fires only once, via the same transition rule.
+
+**Administrator absence is counted by capability (`manage_options`), not by the
+`administrator` role slug alone.** A site that renames or splits the role still has someone
+who can recover it; counting capability matches how the rest of WordPress decides who is an
+admin. The count is capped at two in the query — we only need "zero vs at least one".
+
+## `includes/class-alerts.php`
+
+**Alerts listen to `karetaker_event_recorded`, not to the hooks that produced the event.** The
+event layer is the single place that has already decided the code, severity and sanitised
+context; Tell must not re-derive "was this ACT?" from `set_user_role` or a scan result, or the
+two layers drift. Severity is checked first: only `SEVERITY_ACT` can mail.
+
+**Dedupe is a 24-hour transient keyed on `md5( code | json(context) )`, set only after
+`wp_mail` reports success.** A failed send must be allowed to retry; a successful one must
+not mail again for the same shape within a day — that is the whole scarcity model. Context is
+`ksort`'d before hashing so key order cannot create two identities for one fact. The kill
+switch is checked again here even though `record()` already bails when disabled, because an
+event recorded *before* the file appeared could still be mid-flight in the same request.
+
+**The body points at Tools → Karetaker Settings to turn alerts off.** There is no separate
+unsubscribe token or public endpoint — that would be a new attack surface for a plugin whose
+job is to shrink surface area. Settings copy is enough for a site the owner can still reach;
+if they cannot reach it, the kill-switch file is the out-of-band path.
+
+## `includes/class-admin.php`
+
+**The screen lives under Tools (`add_management_page`), not a top-level admin menu.** A
+security plugin that adds its own sidebar icon on every client site trains agencies to ignore
+yet another badge; Tools is where "look at the log / change the email" belongs for a plugin
+that is meant to stay quiet. Capability is `manage_options` end to end — menu, render, and
+`admin_post` save — and the save handler checks the nonce before touching settings.
+
+**No front-end assets are enqueued, from this class or anywhere else in the plugin.** The
+admin UI is plain `wrap` markup and core list-table styles. A public CSS/JS bundle would be a
+permanent front-end cost for a product whose stated budget is zero queries and zero assets on
+the logged-out home page.
+
+**`class-admin.php` (and the list table) load only inside `is_admin()` in `karetaker_boot()`.**
+Guard and Alerts still `require` / `init` on every request so option hooks and
+`karetaker_event_recorded` work when something changes from the front or from cron; Admin is
+UI-only and has no business on that path.
+
+## `includes/class-list-table.php`
+
+**Every column goes through `esc_html`, including context rendered as JSON.** The activity
+log deliberately stores attacker-controlled strings; an unescaped viewer is the most likely
+XSS this plugin will ever ship (see the events section). Severity and user id are cast before
+escape so a weird DB type cannot slip markup through.
+
+**The User column is the numeric `user_id`, not a display name.** Resolving logins on every
+row would add per-page user lookups to a screen that already runs `COUNT(*)` for pagination,
+and a deleted user would leave a blank that looks like a bug. Filters (severity, code, date)
+are deferred — v1 is newest-first, page size 20, unfiltered `Karetaker_Schema::count()` —
+because shipping the escape-correct table mattered more than shipping a query UI on top of it.

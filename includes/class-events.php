@@ -128,6 +128,9 @@ class Karetaker_Events {
 			$user_id = get_current_user_id();
 		}
 
+		$clean_context = self::sanitize_context( $context );
+		$severity      = self::severity_for( $code );
+
 		$ip     = self::client_ip();
 		$packed = ( '' === $ip ) ? null : inet_pton( $ip );
 
@@ -136,10 +139,10 @@ class Karetaker_Events {
 			array(
 				'event_time' => current_time( 'mysql', true ),
 				'event_code' => $code,
-				'severity'   => self::severity_for( $code ),
+				'severity'   => $severity,
 				'user_id'    => (int) $user_id,
 				'ip'         => $packed ? $packed : null,
-				'context'    => wp_json_encode( self::sanitize_context( $context ) ),
+				'context'    => wp_json_encode( $clean_context ),
 			),
 			array( '%s', '%s', '%d', '%d', '%s', '%s' )
 		);
@@ -153,6 +156,8 @@ class Karetaker_Events {
 		if ( 0 === $id % self::TRIM_EVERY ) {
 			Karetaker_Schema::trim( $id );
 		}
+
+		do_action( 'karetaker_event_recorded', $id, $code, $severity, $clean_context );
 
 		return $id;
 	}
