@@ -22,7 +22,7 @@ Ran against **`dist/karetaker-0.1.0.zip`** unpacked as `karetaker-pcp` on Local
 
 ## Upload checklist (human)
 
-1. WordPress.org plugin author account (Contributors: `teamkrikir` must match).
+1. WordPress.org plugin author account (Contributors: `krikir` must match your login).
 2. Re-confirm slug free the day you upload.
 3. Upload **`~/karetaker/dist/karetaker-0.1.0.zip`** via Plugins → Add New (or SVN `trunk`).
 4. After the plugin is approved / SVN exists, commit directory assets to **`/assets`** (not trunk):

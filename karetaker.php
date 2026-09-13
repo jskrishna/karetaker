@@ -4,7 +4,8 @@
  * Description: Watches a WordPress site for the changes that indicate compromise, and tells the owner only when something needs them.
  * Version:     0.1.0
  * Author:      Team Krikir
- * License:     GPL-2.0-or-later
+ * License:     GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Update URI:  false
  * Requires PHP: 7.4
  * Requires at least: 6.2

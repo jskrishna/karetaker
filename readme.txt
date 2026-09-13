@@ -1,5 +1,5 @@
 === Karetaker ===
-Contributors: teamkrikir
+Contributors: krikir
 Tags: security, monitoring, hardening, integrity, alerts
 Requires at least: 6.2
 Tested up to: 7.1
@@ -57,12 +57,16 @@ It unlocks a read-only JSON status endpoint for monitoring scripts. Empty token 
 
 No. Uninstall drops the events table, plugin options, and cron hooks.
 
+= What data leaves the site? =
+
+By default, only integrity checks contact WordPress.org to fetch published core/plugin checksums (same family of APIs WordPress itself uses). Optional features you turn on yourself may also leave the site: ACT alert emails (to the address you choose), an ACT webhook POST (to the URL you set), and the agency status endpoint (only when a token is generated — read-only, inbound). Karetaker does not phone home to Team Krikir and does not load third-party scripts or ads.
+
 == Screenshots ==
 
 1. Overview — product intro, last scan, Guard flags, and event counts.
 2. Activity — the events log with Log/Watch/Act-now labels and readable context.
 3. Harden — opt-in toggles with Desired vs Live now receipts.
-4. Settings — alert email, trusted proxies, and agency token controls.
+4. Settings — alert email, trusted proxies, ACT webhook, and agency token controls.
 
 == Changelog ==
 
