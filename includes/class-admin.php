@@ -13,11 +13,12 @@ class Karetaker_Admin {
 
 	const PAGE_SLUG = 'karetaker';
 
-	const TABS = array( 'overview', 'activity', 'settings' );
+	const TABS = array( 'overview', 'activity', 'harden', 'settings' );
 
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
 		add_action( 'admin_post_karetaker_save_settings', array( __CLASS__, 'handle_save_settings' ) );
+		add_action( 'admin_post_karetaker_save_harden', array( __CLASS__, 'handle_save_harden' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'maybe_settings_notice' ) );
 	}
 
@@ -56,6 +57,8 @@ class Karetaker_Admin {
 				self::render_settings();
 			} elseif ( 'activity' === $tab ) {
 				self::render_activity();
+			} elseif ( 'harden' === $tab ) {
+				self::render_harden();
 			} else {
 				self::render_overview();
 			}
@@ -69,6 +72,7 @@ class Karetaker_Admin {
 		$labels = array(
 			'overview'  => __( 'Overview', 'karetaker' ),
 			'activity'  => __( 'Activity', 'karetaker' ),
+			'harden'    => __( 'Harden', 'karetaker' ),
 			'settings'  => __( 'Settings', 'karetaker' ),
 		);
 		?>
@@ -179,6 +183,95 @@ class Karetaker_Admin {
 			<?php $table->display(); ?>
 		</div>
 		<?php
+	}
+
+	private static function render_harden() {
+		$desired = Karetaker_Harden::desired();
+		$meta    = self::harden_field_meta();
+
+		if ( karetaker_is_disabled() ) {
+			?>
+			<div class="notice notice-error">
+				<p><?php echo esc_html__( 'Karetaker is disabled (kill switch). Harden toggles are not applying.', 'karetaker' ); ?></p>
+			</div>
+			<?php
+		}
+		?>
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:1em;max-width:960px;">
+			<input type="hidden" name="action" value="karetaker_save_harden" />
+			<?php wp_nonce_field( 'karetaker_save_harden' ); ?>
+			<table class="widefat striped" style="margin-top:1em;">
+				<thead>
+					<tr>
+						<th scope="col"><?php echo esc_html__( 'Toggle', 'karetaker' ); ?></th>
+						<th scope="col"><?php echo esc_html__( 'Desired', 'karetaker' ); ?></th>
+						<th scope="col"><?php echo esc_html__( 'Live now', 'karetaker' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( Karetaker_Harden::KEYS as $key ) : ?>
+						<?php
+						$label = isset( $meta[ $key ]['label'] ) ? $meta[ $key ]['label'] : $key;
+						$help  = isset( $meta[ $key ]['help'] ) ? $meta[ $key ]['help'] : '';
+						$id    = 'karetaker_harden_' . $key;
+						?>
+						<tr>
+							<th scope="row">
+								<label for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $label ); ?></label>
+								<?php if ( '' !== $help ) : ?>
+									<p class="description"><?php echo esc_html( $help ); ?></p>
+								<?php endif; ?>
+							</th>
+							<td>
+								<input
+									type="checkbox"
+									id="<?php echo esc_attr( $id ); ?>"
+									name="harden[<?php echo esc_attr( $key ); ?>]"
+									value="1"
+									<?php checked( ! empty( $desired[ $key ] ) ); ?>
+								/>
+							</td>
+							<td><?php echo esc_html( Karetaker_Harden::probe( $key ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<?php submit_button( __( 'Save Harden settings', 'karetaker' ) ); ?>
+		</form>
+		<?php
+	}
+
+	private static function harden_field_meta() {
+		return array(
+			'headers'       => array(
+				'label' => __( 'Security headers', 'karetaker' ),
+				'help'  => __( 'Send nosniff, frame, referrer, and permissions headers. No CSP. HSTS only on SSL outside local.', 'karetaker' ),
+			),
+			'xmlrpc'        => array(
+				'label' => __( 'Disable XML-RPC', 'karetaker' ),
+				'help'  => __( 'Turn off XML-RPC and strip pingback methods / X-Pingback.', 'karetaker' ),
+			),
+			'file_editor'   => array(
+				'label' => __( 'Block file editor', 'karetaker' ),
+				'help'  => __( 'Define DISALLOW_FILE_EDIT for this request if the host has not already.', 'karetaker' ),
+			),
+			'user_enum'     => array(
+				'label' => __( 'Block user enumeration', 'karetaker' ),
+				'help'  => __( 'Hide REST user routes for guests and redirect digit-only ?author= queries.', 'karetaker' ),
+			),
+			'version'       => array(
+				'label' => __( 'Hide WordPress version', 'karetaker' ),
+				'help'  => __( 'Remove the generator and strip ver= from script and style URLs.', 'karetaker' ),
+			),
+			'registration'  => array(
+				'label' => __( 'Close registration', 'karetaker' ),
+				'help'  => __( 'Force users_can_register closed via filter without writing the option.', 'karetaker' ),
+			),
+			'app_passwords' => array(
+				'label' => __( 'Limit application passwords', 'karetaker' ),
+				'help'  => __( 'Allow application passwords only for users with manage_options.', 'karetaker' ),
+			),
+		);
 	}
 
 	private static function render_settings() {
@@ -326,6 +419,49 @@ class Karetaker_Admin {
 		exit;
 	}
 
+	public static function handle_save_harden() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to save these settings.', 'karetaker' ) );
+		}
+
+		check_admin_referer( 'karetaker_save_harden' );
+
+		$posted = isset( $_POST['harden'] ) && is_array( $_POST['harden'] ) ? wp_unslash( $_POST['harden'] ) : array();
+		$next   = Karetaker_Harden::defaults();
+
+		foreach ( Karetaker_Harden::KEYS as $key ) {
+			$next[ $key ] = ! empty( $posted[ $key ] );
+		}
+
+		$prev = Karetaker_Settings::harden();
+
+		foreach ( Karetaker_Harden::KEYS as $key ) {
+			if ( (bool) $prev[ $key ] !== (bool) $next[ $key ] ) {
+				Karetaker_Events::record(
+					'setting_changed',
+					array(
+						'option' => 'harden.' . $key,
+						'value'  => $next[ $key ] ? '1' : '0',
+					)
+				);
+			}
+		}
+
+		Karetaker_Settings::update( array( 'harden' => $next ) );
+
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'    => self::PAGE_SLUG,
+					'tab'     => 'harden',
+					'updated' => '1',
+				),
+				admin_url( 'tools.php' )
+			)
+		);
+		exit;
+	}
+
 	public static function maybe_settings_notice() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -336,7 +472,9 @@ class Karetaker_Admin {
 			return;
 		}
 
-		if ( empty( $_GET['karetaker_saved'] ) ) {
+		$saved_settings = ! empty( $_GET['karetaker_saved'] );
+		$saved_harden   = ! empty( $_GET['updated'] ) && 'harden' === self::current_tab();
+		if ( ! $saved_settings && ! $saved_harden ) {
 			return;
 		}
 		?>

@@ -25,7 +25,26 @@ class Karetaker_Settings {
 			'alerts_enabled'   => true,
 			'trusted_proxies'  => array(),
 			'forwarded_header' => '',
+			'harden'           => array(
+				'headers'       => false,
+				'xmlrpc'        => false,
+				'file_editor'   => false,
+				'user_enum'     => false,
+				'version'       => false,
+				'registration'  => false,
+				'app_passwords' => false,
+			),
 		);
+	}
+
+	public static function harden() {
+		$h = self::get( 'harden' );
+
+		if ( ! is_array( $h ) ) {
+			$h = array();
+		}
+
+		return wp_parse_args( $h, Karetaker_Harden::defaults() );
 	}
 
 	public static function all() {

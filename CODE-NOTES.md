@@ -360,6 +360,38 @@ unsubscribe token or public endpoint — that would be a new attack surface for 
 job is to shrink surface area. Settings copy is enough for a site the owner can still reach;
 if they cannot reach it, the kill-switch file is the out-of-band path.
 
+## `includes/class-harden.php`
+
+**Every toggle defaults off.** Observation and Guard stay on; Harden only registers hooks for
+keys the owner has set to true. A fresh install therefore ships zero Harden filters and zero
+`DISALLOW_FILE_EDIT` from this class.
+
+**No CSP.** Headers send nosniff, SAMEORIGIN frame, referrer, permissions-policy, and HSTS
+only when `is_ssl()` and the environment is not `local`. Content-Security-Policy is left to
+the host or a dedicated plugin — a wrong CSP locks the admin UI and that is not this plugin's
+job.
+
+**Registration is closed with `pre_option_users_can_register`, not `update_option`.** Writing
+the option would fight the owner's Settings → General choice and confuse Guard / scanners
+that read raw SQL. The filter forces behaviour to closed while Desired is on; turning Desired
+off removes the filter and the stored option is what it always was.
+
+**`DISALLOW_FILE_EDIT` is defined only when undefined.** If the host or `wp-config.php`
+already set the constant, Harden does not redefine it (PHP would fatal). Live now reports
+`Blocked by host/wp-config` when Desired is off but the constant is already true.
+
+**Idempotent with `spice-hardening` (and similar mu-plugins).** Double-disabling XML-RPC,
+double-closing registration via `pre_option_*`, or sending the same headers twice is safe —
+Harden never assumes it is the only actor and never writes server config files.
+
+**Probes are derived each render, never stored.** There is no “protected” score in settings;
+`probe()` reads Desired, boot state, filters, and constants for the current request so Live
+now cannot drift from a cached boolean.
+
+**Kill switch:** `karetaker_boot()` returns before `Karetaker_Harden::init()`, so no Harden
+filters or defines register for that boot. The class file is still required at load so Admin /
+CLI can read Desired and explain inactivity.
+
 ## `includes/class-admin.php`
 
 **The screen lives under Tools (`add_management_page`), not a top-level admin menu.** A
@@ -367,6 +399,10 @@ security plugin that adds its own sidebar icon on every client site trains agenc
 yet another badge; Tools is where "look at the log / change the email" belongs for a plugin
 that is meant to stay quiet. Capability is `manage_options` end to end — menu, render, and
 `admin_post` save — and the save handler checks the nonce before touching settings.
+
+**Harden has its own tab and `admin_post_karetaker_save_harden` form.** Settings stays focused
+on alerts, proxies and row cap; each Harden checkbox change logs `setting_changed` with
+`option` = `harden.{key}` only when the value actually flipped.
 
 **No front-end assets are enqueued, from this class or anywhere else in the plugin.** The
 admin UI is plain `wrap` markup and core list-table styles. A public CSS/JS bundle would be a
