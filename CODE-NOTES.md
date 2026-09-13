@@ -16,7 +16,18 @@ section omitted until assets exist. Spec/plan:
 `docs/superpowers/specs/2026-09-13-karetaker-wporg-prep-design.md`,
 `docs/superpowers/plans/2026-09-13-karetaker-wporg-prep.md`.
 
+## Dist / Plugin Check
+
+`.distignore` lists files that must not enter a WordPress.org zip (Composer, PHPCS,
+agent markdown, docs, vendor). Plugin Check against the live symlink will flag those;
+check a dist copy instead. The only remaining **ERROR** on a clean package is
+`Update URI: false` — leave it until the first upload.
+
+`load_plugin_textdomain()` was removed: directory-hosted plugins get translations
+auto-loaded under the slug since WP 4.6.
+
 ## PHPCS / WPCS
+
 
 `composer.json` (dev) installs WPCS 3.x; `composer phpcs` / `./vendor/bin/phpcs` uses
 `phpcs.xml.dist`. Run that before submission. `vendor/` is gitignored; commit

@@ -364,7 +364,8 @@ class Karetaker_Events {
 
 		$sql = 'SELECT * FROM ' . $table . ' WHERE ' . implode( ' AND ', $where ) . ' ORDER BY id DESC LIMIT %d OFFSET %d';
 
-		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// $table is esc_sql()-safe from Schema::table(); placeholders cover the rest.
+		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $params ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
 
 		return array_map( array( __CLASS__, 'hydrate' ), $rows ? $rows : array() );
 	}

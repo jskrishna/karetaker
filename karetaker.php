@@ -115,17 +115,6 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	add_action( 'init', 'karetaker_maybe_upgrade', 1 );
 }
 
-/**
- * Load the plugin text domain.
- *
- * @since 0.1.0
- * @return void
- */
-function karetaker_load_textdomain() {
-	load_plugin_textdomain( 'karetaker', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
-}
-add_action( 'init', 'karetaker_load_textdomain' );
-
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once KARETAKER_DIR . 'includes/class-cli.php';
 	WP_CLI::add_command( 'karetaker', 'Karetaker_CLI' );

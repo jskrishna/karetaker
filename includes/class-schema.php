@@ -29,7 +29,7 @@ class Karetaker_Schema {
 	public static function table() {
 		global $wpdb;
 
-		return $wpdb->prefix . 'karetaker_events';
+		return esc_sql( $wpdb->prefix . 'karetaker_events' );
 	}
 
 	/**
