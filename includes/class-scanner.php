@@ -46,6 +46,7 @@ class Karetaker_Scanner {
 	 */
 	public static function init() {
 		add_action( self::CRON_HOOK, array( __CLASS__, 'run' ) );
+		self::schedule();
 	}
 
 	/**

@@ -25,8 +25,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 		<label for="kt_code"><?php echo esc_html__( 'Event code', 'karetaker' ); ?></label>
 		<select name="kt_code" id="kt_code">
 			<option value=""><?php echo esc_html__( 'All codes', 'karetaker' ); ?></option>
-			<?php foreach ( array_keys( Karetaker_Events::codes() ) as $event_code_key ) : ?>
-				<option value="<?php echo esc_attr( $event_code_key ); ?>" <?php selected( $filter_code, $event_code_key ); ?>><?php echo esc_html( $event_code_key ); ?></option>
+			<?php foreach ( array_keys( Karetaker_Events::codes() ) as $karetaker_event_code ) : ?>
+				<option value="<?php echo esc_attr( $karetaker_event_code ); ?>" <?php selected( $filter_code, $karetaker_event_code ); ?>><?php echo esc_html( $karetaker_event_code ); ?></option>
 			<?php endforeach; ?>
 		</select>
 	</div>

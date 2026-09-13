@@ -247,6 +247,11 @@ anyway.
 files): a fresh run that takes every baseline costs **0.013s**, a warm diff-only run **0.005s**,
 peak memory increase **0.0 MB**.
 
+**`init()` also calls `schedule()`.** Activation is not the only path that can lose the
+twice-daily event (Local resets, `DISABLE_WP_CRON` experiments, a deactivate/reactivate gap).
+Re-scheduling when missing is idempotent and keeps Overview’s “Next scan” and Site Health
+from going blank after a healthy install.
+
 **Only `mu-plugins` is hashed. Uploads is matched by filename, not content.** That is what
 keeps the cost linear and tiny on a photo-heavy site: hashing scales with bytes, name
 matching scales with entries. `mu-plugins` is always small and is the directory that
@@ -400,10 +405,12 @@ not mail again for the same shape within a day — that is the whole scarcity mo
 switch is checked again here even though `record()` already bails when disabled, because an
 event recorded *before* the file appeared could still be mid-flight in the same request.
 
-**The body points at Karetaker → Settings to turn alerts off.** There is no separate
-unsubscribe token or public endpoint — that would be a new attack surface for a plugin whose
-job is to shrink surface area. Settings copy is enough for a site the owner can still reach;
-if they cannot reach it, the kill-switch file is the out-of-band path.
+**The body reuses `Karetaker_Guidance::for_event()` for summary, numbered next steps, and a
+deep link**, then appends technical JSON and a link into Activity. Same copy as the drawer —
+Tell and the UI cannot drift. There is no separate unsubscribe token or public endpoint —
+that would be a new attack surface for a plugin whose job is to shrink surface area. Settings
+copy is enough for a site the owner can still reach; if they cannot reach it, the kill-switch
+file is the out-of-band path.
 
 ## `includes/class-harden.php`
 

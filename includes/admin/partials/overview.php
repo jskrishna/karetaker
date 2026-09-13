@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$slice_labels = array(
+$karetaker_slice_labels = array(
 	'muplugins' => __( 'MU-plugins', 'karetaker' ),
 	'uploads'   => __( 'Uploads', 'karetaker' ),
 	'cron'      => __( 'Cron', 'karetaker' ),
@@ -125,20 +125,20 @@ $slice_labels = array(
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ( $results as $scan => $status ) : ?>
+					<?php foreach ( $results as $karetaker_scan => $karetaker_status ) : ?>
 						<?php
-						$scan_key   = (string) $scan;
-						$scan_label = isset( $slice_labels[ $scan_key ] ) ? $slice_labels[ $scan_key ] : $scan_key;
-						$status_str = (string) $status;
-						$is_clean   = ( false !== strpos( $status_str, 'clean' ) || false !== strpos( $status_str, 'baseline' ) || 'ok' === $status_str );
+						$karetaker_scan_key   = (string) $karetaker_scan;
+						$karetaker_scan_label = isset( $karetaker_slice_labels[ $karetaker_scan_key ] ) ? $karetaker_slice_labels[ $karetaker_scan_key ] : $karetaker_scan_key;
+						$karetaker_status_str = (string) $karetaker_status;
+						$karetaker_is_clean   = ( false !== strpos( $karetaker_status_str, 'clean' ) || false !== strpos( $karetaker_status_str, 'baseline' ) || 'ok' === $karetaker_status_str );
 						?>
 						<tr>
-							<td><?php echo esc_html( $scan_label ); ?></td>
-							<td><code><?php echo esc_html( $scan_key ); ?></code></td>
+							<td><?php echo esc_html( $karetaker_scan_label ); ?></td>
+							<td><code><?php echo esc_html( $karetaker_scan_key ); ?></code></td>
 							<td>
-								<span class="kt-status-pill<?php echo $is_clean ? '' : ' is-warn'; ?>">
-									<span class="dashicons <?php echo $is_clean ? 'dashicons-yes-alt' : 'dashicons-info'; ?>" aria-hidden="true" style="font-size:14px;width:14px;height:14px;"></span>
-									<?php echo esc_html( $status_str ); ?>
+								<span class="kt-status-pill<?php echo $karetaker_is_clean ? '' : ' is-warn'; ?>">
+									<span class="dashicons <?php echo $karetaker_is_clean ? 'dashicons-yes-alt' : 'dashicons-info'; ?>" aria-hidden="true" style="font-size:14px;width:14px;height:14px;"></span>
+									<?php echo esc_html( $karetaker_status_str ); ?>
 								</span>
 							</td>
 						</tr>

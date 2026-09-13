@@ -20,39 +20,39 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<input type="hidden" name="action" value="karetaker_save_harden" />
 	<?php wp_nonce_field( 'karetaker_save_harden' ); ?>
 
-	<?php foreach ( $harden_groups as $group_label => $keys ) : ?>
+	<?php foreach ( $harden_groups as $karetaker_group_label => $karetaker_keys ) : ?>
 		<div class="kt-panel">
 			<div class="kt-panel__head">
 				<span class="dashicons dashicons-lock" aria-hidden="true"></span>
-				<h2><?php echo esc_html( $group_label ); ?></h2>
+				<h2><?php echo esc_html( $karetaker_group_label ); ?></h2>
 			</div>
 			<div class="kt-harden-grid">
-				<?php foreach ( $keys as $key ) : ?>
+				<?php foreach ( $karetaker_keys as $karetaker_key ) : ?>
 					<?php
-					$label = isset( $meta[ $key ]['label'] ) ? $meta[ $key ]['label'] : $key;
-					$help  = isset( $meta[ $key ]['help'] ) ? $meta[ $key ]['help'] : '';
-					$id    = 'karetaker_harden_' . $key;
+					$karetaker_label = isset( $meta[ $karetaker_key ]['label'] ) ? $meta[ $karetaker_key ]['label'] : $karetaker_key;
+					$karetaker_help  = isset( $meta[ $karetaker_key ]['help'] ) ? $meta[ $karetaker_key ]['help'] : '';
+					$karetaker_id    = 'karetaker_harden_' . $karetaker_key;
 					?>
 					<div class="kt-toggle-card">
 						<div>
 							<p class="kt-toggle-card__title">
-								<label for="<?php echo esc_attr( $id ); ?>"><?php echo esc_html( $label ); ?></label>
+								<label for="<?php echo esc_attr( $karetaker_id ); ?>"><?php echo esc_html( $karetaker_label ); ?></label>
 							</p>
-							<?php if ( '' !== $help ) : ?>
-								<p class="kt-toggle-card__help"><?php echo esc_html( $help ); ?></p>
+							<?php if ( '' !== $karetaker_help ) : ?>
+								<p class="kt-toggle-card__help"><?php echo esc_html( $karetaker_help ); ?></p>
 							<?php endif; ?>
 						</div>
-						<label class="kt-switch" for="<?php echo esc_attr( $id ); ?>">
+						<label class="kt-switch" for="<?php echo esc_attr( $karetaker_id ); ?>">
 							<input
 								type="checkbox"
-								id="<?php echo esc_attr( $id ); ?>"
-								name="harden[<?php echo esc_attr( $key ); ?>]"
+								id="<?php echo esc_attr( $karetaker_id ); ?>"
+								name="harden[<?php echo esc_attr( $karetaker_key ); ?>]"
 								value="1"
-								<?php checked( ! empty( $desired[ $key ] ) ); ?>
+								<?php checked( ! empty( $desired[ $karetaker_key ] ) ); ?>
 							/>
 							<span class="kt-switch__track"></span>
 						</label>
-						<span class="kt-toggle-card__live"><?php echo esc_html( Karetaker_Harden::probe( $key ) ); ?></span>
+						<span class="kt-toggle-card__live"><?php echo esc_html( Karetaker_Harden::probe( $karetaker_key ) ); ?></span>
 					</div>
 				<?php endforeach; ?>
 			</div>

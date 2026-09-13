@@ -143,21 +143,41 @@ class Karetaker_Alerts {
 	 * @return string
 	 */
 	public static function body_for( $code, array $context, $id ) {
-		$home  = home_url( '/' );
-		$tools = admin_url( 'admin.php?page=karetaker' );
+		$home     = home_url( '/' );
+		$tools    = admin_url( 'admin.php?page=karetaker&tab=activity' );
+		$guidance = Karetaker_Guidance::for_event( $code, $context );
 
 		$lines   = array();
 		$lines[] = self::subject_for( $code, $context );
 		$lines[] = '';
 		$lines[] = 'Site: ' . $home;
 		$lines[] = 'Event: ' . $code . ' (#' . (int) $id . ')';
+		if ( ! empty( $guidance['summary'] ) ) {
+			$lines[] = '';
+			$lines[] = $guidance['summary'];
+		}
+		if ( ! empty( $guidance['steps'] ) ) {
+			$lines[] = '';
+			$lines[] = 'What you should do:';
+			$step_n  = 1;
+			foreach ( $guidance['steps'] as $step ) {
+				$lines[] = $step_n . '. ' . $step;
+				++$step_n;
+			}
+		}
+		if ( ! empty( $guidance['link'] ) ) {
+			$lines[] = '';
+			$label   = ! empty( $guidance['link_label'] ) ? $guidance['link_label'] : 'Open related screen';
+			$lines[] = $label . ': ' . $guidance['link'];
+		}
 		if ( $context ) {
-			$lines[] = 'Details: ' . wp_json_encode( $context );
+			$lines[] = '';
+			$lines[] = 'Technical details: ' . wp_json_encode( $context );
 		}
 		$lines[] = '';
-		$lines[] = 'Open Karetaker: ' . $tools;
+		$lines[] = 'Open Karetaker Activity: ' . $tools;
 		$lines[] = '';
-		$lines[] = 'To stop these emails, open that page → Settings and turn off Enable alerts.';
+		$lines[] = 'To stop these emails, open Karetaker → Settings and turn off Enable alerts.';
 
 		return implode( "\n", $lines );
 	}
