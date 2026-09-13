@@ -22,6 +22,12 @@ define( 'KARETAKER_FILE', __FILE__ );
 define( 'KARETAKER_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KARETAKER_SLUG', 'karetaker' );
 
+/**
+ * Whether the kill switch is engaged.
+ *
+ * @since 0.1.0
+ * @return bool True when KARETAKER_DISABLE is set or the disable file exists.
+ */
 function karetaker_is_disabled() {
 	if ( defined( 'KARETAKER_DISABLE' ) && KARETAKER_DISABLE ) {
 		return true;
@@ -45,15 +51,33 @@ require_once KARETAKER_DIR . 'includes/class-agency.php';
 register_activation_hook( __FILE__, 'karetaker_activate' );
 register_deactivation_hook( __FILE__, 'karetaker_deactivate' );
 
+/**
+ * Activation: install schema and schedule the scanner.
+ *
+ * @since 0.1.0
+ * @return void
+ */
 function karetaker_activate() {
 	Karetaker_Schema::activate();
 	Karetaker_Scanner::schedule();
 }
 
+/**
+ * Deactivation: unschedule the scanner (data retained).
+ *
+ * @since 0.1.0
+ * @return void
+ */
 function karetaker_deactivate() {
 	Karetaker_Scanner::unschedule();
 }
 
+/**
+ * Boot watchers when the kill switch is off.
+ *
+ * @since 0.1.0
+ * @return void
+ */
 function karetaker_boot() {
 	if ( karetaker_is_disabled() ) {
 		return;
@@ -75,6 +99,12 @@ function karetaker_boot() {
 }
 add_action( 'plugins_loaded', 'karetaker_boot' );
 
+/**
+ * Run schema upgrades if needed.
+ *
+ * @since 0.1.0
+ * @return void
+ */
 function karetaker_maybe_upgrade() {
 	Karetaker_Schema::maybe_upgrade();
 }
@@ -85,6 +115,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	add_action( 'init', 'karetaker_maybe_upgrade', 1 );
 }
 
+/**
+ * Load the plugin text domain.
+ *
+ * @since 0.1.0
+ * @return void
+ */
 function karetaker_load_textdomain() {
 	load_plugin_textdomain( 'karetaker', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 }

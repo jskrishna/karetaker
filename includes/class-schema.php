@@ -3,27 +3,51 @@
  * Event table schema and retention.
  *
  * @package Karetaker
+ * @since 0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Creates and maintains the `karetaker_events` table.
+ *
+ * @since 0.1.0
+ */
 class Karetaker_Schema {
 
 	const SCHEMA_VERSION = 1;
 	const VERSION_OPTION = 'karetaker_schema_version';
 
+	/**
+	 * Prefixed events table name.
+	 *
+	 * @since 0.1.0
+	 * @return string
+	 */
 	public static function table() {
 		global $wpdb;
 
 		return $wpdb->prefix . 'karetaker_events';
 	}
 
+	/**
+	 * Run install on plugin activation.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function activate() {
 		self::install();
 	}
 
+	/**
+	 * Install or upgrade when the stored schema version lags.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function maybe_upgrade() {
 		if ( (int) get_option( self::VERSION_OPTION, 0 ) === self::SCHEMA_VERSION ) {
 			return;
@@ -32,6 +56,12 @@ class Karetaker_Schema {
 		self::install();
 	}
 
+	/**
+	 * Create or update the events table via dbDelta.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function install() {
 		global $wpdb;
 
@@ -58,6 +88,12 @@ class Karetaker_Schema {
 		update_option( self::VERSION_OPTION, self::SCHEMA_VERSION, false );
 	}
 
+	/**
+	 * Drop the events table and schema version option.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function uninstall() {
 		global $wpdb;
 
@@ -68,6 +104,13 @@ class Karetaker_Schema {
 		delete_option( self::VERSION_OPTION );
 	}
 
+	/**
+	 * Delete rows older than the configured row cap relative to the latest id.
+	 *
+	 * @since 0.1.0
+	 * @param int $latest_id Newest row id after insert.
+	 * @return int Number of rows deleted.
+	 */
 	public static function trim( $latest_id ) {
 		global $wpdb;
 
@@ -85,6 +128,12 @@ class Karetaker_Schema {
 		);
 	}
 
+	/**
+	 * Count rows in the events table.
+	 *
+	 * @since 0.1.0
+	 * @return int
+	 */
 	public static function count() {
 		global $wpdb;
 
@@ -93,6 +142,12 @@ class Karetaker_Schema {
 		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
+	/**
+	 * Approximate on-disk size of the events table in bytes.
+	 *
+	 * @since 0.1.0
+	 * @return int
+	 */
 	public static function size_bytes() {
 		global $wpdb;
 

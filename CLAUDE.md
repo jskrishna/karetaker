@@ -19,9 +19,9 @@ carries 38 comment lines while `class-scanner.php` carries 5 across 434 lines �
 synthesises its `wp help` output from docblocks and simply does not work without them. That is
 the rule failing against the platform, not an inconsistency to tidy up.
 
-**The backlog this leaves:** every class except `class-cli.php` was written under the old rule
-and currently has a file docblock and nothing else. They need class and method docblocks before
-submission.
+**Docblocks are required on every file, class, method and function** (`@param`, `@return`,
+`@since`). The Watch–Agency classes were brought up to that bar in the 2026-09-13 wp.org prep
+slice. Keep them current when you add methods.
 
 ## Standards
 
@@ -76,9 +76,12 @@ save a file. Nothing needs copying anywhere for it to run.
 
 ## Before submission
 
-- **There is no `readme.txt` yet.** The directory will not accept the plugin without one, and it
-  is what renders the plugin page — the stable tag, the tested-up-to version, the screenshots
-  and the FAQ all live in it.
-- Run the WPCS pass and the docblock backlog above.
+- **`readme.txt` is in place** (Stable tag 0.1.0, Tested up to 7.1). Add screenshots/banner
+  assets when you have them; the Screenshots section is omitted until then.
+- **Docblock backlog is done** for plugin PHP (file/class/method `@param` / `@return`). Keep
+  new methods documented the same way; design rationale still lives in `CODE-NOTES.md`.
+- **Remove `Update URI: false` from `karetaker.php` immediately before the first .org upload**
+  (keep it while distributing by hand — see `CODE-NOTES.md`).
+- Run Plugin Check and the WPCS / `WordPress-Docs` pass.
 - Confirm the slug is still free before the first upload; `karetaker` was confirmed free on
   2026-09-13 and a name can be taken between then and submission.

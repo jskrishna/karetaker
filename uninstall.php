@@ -2,7 +2,10 @@
 /**
  * Uninstall routine.
  *
+ * Drops the events table, settings option, scan-related options, and scheduled hooks.
+ *
  * @package Karetaker
+ * @since 0.1.0
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {

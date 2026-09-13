@@ -3,18 +3,25 @@
  * Shared status snapshot builder.
  *
  * @package Karetaker
+ * @since 0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Builds the fact payload shared by CLI and the agency REST route.
+ *
+ * @since 0.1.0
+ */
 class Karetaker_Status {
 
 	/**
 	 * Build the fact payload shared by CLI and the agency REST route (without sig).
 	 *
-	 * @return array
+	 * @since 0.1.0
+	 * @return array<string,mixed>
 	 */
 	public static function snapshot() {
 		$state = Karetaker_Scanner::state();

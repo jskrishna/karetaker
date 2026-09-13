@@ -9,6 +9,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Opt-in hardening toggles with derived live probes.
+ *
+ * @since 0.1.0
+ * @package Karetaker
+ */
 class Karetaker_Harden {
 
 	const KEYS = array(
@@ -23,6 +29,12 @@ class Karetaker_Harden {
 
 	private static $booted = false;
 
+	/**
+	 * Default Desired map with every harden toggle off.
+	 *
+	 * @since 0.1.0
+	 * @return array<string, bool>
+	 */
 	public static function defaults() {
 		return array(
 			'headers'       => false,
@@ -35,6 +47,12 @@ class Karetaker_Harden {
 		);
 	}
 
+	/**
+	 * Desired harden toggles merged from settings.
+	 *
+	 * @since 0.1.0
+	 * @return array<string, bool>
+	 */
 	public static function desired() {
 		$h = Karetaker_Settings::harden();
 		$out = array();
@@ -46,6 +64,13 @@ class Karetaker_Harden {
 		return $out;
 	}
 
+	/**
+	 * Whether a harden key is Desired on.
+	 *
+	 * @since 0.1.0
+	 * @param string $key Harden toggle key.
+	 * @return bool
+	 */
 	public static function is_on( $key ) {
 		$key = sanitize_key( $key );
 
@@ -58,6 +83,12 @@ class Karetaker_Harden {
 		return ! empty( $d[ $key ] );
 	}
 
+	/**
+	 * Registers filters and defines for Desired-on harden toggles.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function init() {
 		if ( self::$booted ) {
 			return;
@@ -100,6 +131,12 @@ class Karetaker_Harden {
 		}
 	}
 
+	/**
+	 * Sends security response headers (no CSP).
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function send_headers() {
 		if ( headers_sent() ) {
 			return;
@@ -115,6 +152,13 @@ class Karetaker_Harden {
 		}
 	}
 
+	/**
+	 * Removes pingback methods from the XML-RPC method map.
+	 *
+	 * @since 0.1.0
+	 * @param array $methods XML-RPC methods.
+	 * @return array
+	 */
 	public static function filter_xmlrpc_methods( $methods ) {
 		unset(
 			$methods['pingback.ping'],
@@ -124,17 +168,37 @@ class Karetaker_Harden {
 		return $methods;
 	}
 
+	/**
+	 * Strips the X-Pingback response header.
+	 *
+	 * @since 0.1.0
+	 * @param array $headers Response headers.
+	 * @return array
+	 */
 	public static function filter_wp_headers( $headers ) {
 		unset( $headers['X-Pingback'] );
 
 		return $headers;
 	}
 
+	/**
+	 * Hooks REST and author-query user enumeration blockers.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	private static function apply_user_enum() {
 		add_filter( 'rest_endpoints', array( __CLASS__, 'filter_rest_endpoints' ) );
 		add_action( 'parse_request', array( __CLASS__, 'block_author_enum' ) );
 	}
 
+	/**
+	 * Hides /wp/v2/users routes from logged-out clients.
+	 *
+	 * @since 0.1.0
+	 * @param array $endpoints REST route map.
+	 * @return array
+	 */
 	public static function filter_rest_endpoints( $endpoints ) {
 		if ( is_user_logged_in() ) {
 			return $endpoints;
@@ -153,6 +217,13 @@ class Karetaker_Harden {
 		return $endpoints;
 	}
 
+	/**
+	 * 301-redirects digit-only ?author= requests on the front end.
+	 *
+	 * @since 0.1.0
+	 * @param WP $wp Current WP request object (unused).
+	 * @return void
+	 */
 	public static function block_author_enum( $wp ) {
 		unset( $wp );
 
@@ -174,6 +245,12 @@ class Karetaker_Harden {
 		exit;
 	}
 
+	/**
+	 * Hooks generator and asset ver= stripping.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	private static function apply_version() {
 		add_filter( 'the_generator', array( __CLASS__, 'empty_generator' ) );
 		remove_action( 'wp_head', 'wp_generator' );
@@ -181,10 +258,23 @@ class Karetaker_Harden {
 		add_filter( 'script_loader_src', array( __CLASS__, 'strip_ver_query' ) );
 	}
 
+	/**
+	 * Returns an empty generator string.
+	 *
+	 * @since 0.1.0
+	 * @return string
+	 */
 	public static function empty_generator() {
 		return '';
 	}
 
+	/**
+	 * Removes the ver query argument from a script or style URL.
+	 *
+	 * @since 0.1.0
+	 * @param string $src Asset URL.
+	 * @return string
+	 */
 	public static function strip_ver_query( $src ) {
 		if ( is_string( $src ) && false !== strpos( $src, 'ver=' ) ) {
 			$src = remove_query_arg( 'ver', $src );
@@ -193,20 +283,47 @@ class Karetaker_Harden {
 		return $src;
 	}
 
+	/**
+	 * Forces registration closed via pre_option filter.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	private static function apply_registration() {
 		add_filter( 'pre_option_users_can_register', array( __CLASS__, 'force_registration_closed' ) );
 	}
 
+	/**
+	 * pre_option_users_can_register callback that always returns 0.
+	 *
+	 * @since 0.1.0
+	 * @param mixed $pre Short-circuit value (ignored).
+	 * @return string
+	 */
 	public static function force_registration_closed( $pre ) {
 		unset( $pre );
 
 		return '0';
 	}
 
+	/**
+	 * Limits application passwords to administrators.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	private static function apply_app_passwords() {
 		add_filter( 'wp_is_application_passwords_available_for_user', array( __CLASS__, 'filter_app_passwords_user' ), 10, 2 );
 	}
 
+	/**
+	 * Allows application passwords only for users with manage_options.
+	 *
+	 * @since 0.1.0
+	 * @param bool $available Upstream availability.
+	 * @param WP_User|mixed $user User under consideration.
+	 * @return bool
+	 */
 	public static function filter_app_passwords_user( $available, $user ) {
 		if ( ! ( $user instanceof WP_User ) ) {
 			return false;
@@ -219,6 +336,13 @@ class Karetaker_Harden {
 		return false;
 	}
 
+	/**
+	 * Derived live status string for a harden key (not stored).
+	 *
+	 * @since 0.1.0
+	 * @param string $key Harden toggle key.
+	 * @return string
+	 */
 	public static function probe( $key ) {
 		$key = sanitize_key( $key );
 

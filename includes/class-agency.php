@@ -9,14 +9,32 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Optional signed read-only REST status channel.
+ *
+ * @since 0.1.0
+ * @package Karetaker
+ */
 class Karetaker_Agency {
 
 	const TOKEN_MAX_LEN = 256;
 
+	/**
+	 * Registers the agency REST routes.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function init() {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
 	}
 
+	/**
+	 * Registers GET /karetaker/v1/status.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function register_routes() {
 		register_rest_route(
 			'karetaker/v1',
@@ -29,6 +47,12 @@ class Karetaker_Agency {
 		);
 	}
 
+	/**
+	 * Allows the status route when the request Bearer or token matches settings.
+	 *
+	 * @since 0.1.0
+	 * @return bool
+	 */
 	public static function permission_check() {
 		$token = (string) Karetaker_Settings::get( 'agency_token' );
 		if ( '' === $token ) {
@@ -43,6 +67,12 @@ class Karetaker_Agency {
 		return true;
 	}
 
+	/**
+	 * Extracts the agency token from Authorization or ?token=.
+	 *
+	 * @since 0.1.0
+	 * @return string
+	 */
 	public static function request_token() {
 		$header = self::authorization_header();
 		if ( '' !== $header && preg_match( '/^Bearer\s+(\S+)$/i', $header, $matches ) ) {
@@ -56,6 +86,12 @@ class Karetaker_Agency {
 		return '';
 	}
 
+	/**
+	 * Reads the Authorization request header when present.
+	 *
+	 * @since 0.1.0
+	 * @return string
+	 */
 	private static function authorization_header() {
 		if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
 			return trim( (string) wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -79,6 +115,13 @@ class Karetaker_Agency {
 		return '';
 	}
 
+	/**
+	 * Sanitizes and truncates a raw token string.
+	 *
+	 * @since 0.1.0
+	 * @param string $raw Raw token input.
+	 * @return string
+	 */
 	private static function normalize_token( $raw ) {
 		$token = sanitize_text_field( (string) $raw );
 		if ( strlen( $token ) > self::TOKEN_MAX_LEN ) {
@@ -88,6 +131,12 @@ class Karetaker_Agency {
 		return $token;
 	}
 
+	/**
+	 * Returns the signed status snapshot for agency monitoring.
+	 *
+	 * @since 0.1.0
+	 * @return WP_REST_Response|WP_Error
+	 */
 	public static function get_status() {
 		$payload = Karetaker_Status::snapshot();
 		$token   = (string) Karetaker_Settings::get( 'agency_token' );
@@ -96,6 +145,13 @@ class Karetaker_Agency {
 		return rest_ensure_response( $payload );
 	}
 
+	/**
+	 * Recursively ksorts an array for canonical JSON.
+	 *
+	 * @since 0.1.0
+	 * @param array &$arr Array sorted by reference.
+	 * @return void
+	 */
 	public static function ksort_recursive( &$arr ) {
 		if ( ! is_array( $arr ) ) {
 			return;
@@ -110,12 +166,27 @@ class Karetaker_Agency {
 		unset( $v );
 	}
 
+	/**
+	 * JSON-encodes a payload with recursively sorted keys.
+	 *
+	 * @since 0.1.0
+	 * @param array $data Payload without signature.
+	 * @return string|false
+	 */
 	public static function canonical_json( array $data ) {
 		self::ksort_recursive( $data );
 
 		return wp_json_encode( $data );
 	}
 
+	/**
+	 * HMAC-SHA256 signature over the canonical JSON payload.
+	 *
+	 * @since 0.1.0
+	 * @param array $payload Unsigned status payload.
+	 * @param string $token Agency token.
+	 * @return string
+	 */
 	public static function sign( array $payload, $token ) {
 		return hash_hmac( 'sha256', self::canonical_json( $payload ), (string) $token );
 	}
@@ -124,6 +195,8 @@ class Karetaker_Agency {
 	 * Generate a new agency token.
 	 *
 	 * @return string
+	 *
+	 * @since 0.1.0
 	 */
 	public static function generate_token() {
 		return wp_generate_password( 48, false, false );
@@ -134,6 +207,8 @@ class Karetaker_Agency {
 	 *
 	 * @param string $token Raw token.
 	 * @return string
+	 *
+	 * @since 0.1.0
 	 */
 	public static function mask_token( $token ) {
 		$token = (string) $token;

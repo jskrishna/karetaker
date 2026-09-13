@@ -9,6 +9,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * WP-CLI command group for Karetaker.
+ *
+ * @since 0.1.0
+ * @package Karetaker
+ */
 class Karetaker_CLI {
 
 	/**
@@ -24,6 +30,11 @@ class Karetaker_CLI {
 	 *
 	 * [--code=<code>]
 	 * : Only this event code.
+	 *
+	 * @since 0.1.0
+	 * @param array $args Positional arguments (unused).
+	 * @param array $assoc Associative flags: limit, severity, code.
+	 * @return void
 	 */
 	public function log( $args, $assoc ) {
 		$rows = Karetaker_Events::query(
@@ -58,6 +69,9 @@ class Karetaker_CLI {
 
 	/**
 	 * Show plugin status as JSON.
+	 *
+	 * @since 0.1.0
+	 * @return void
 	 */
 	public function status() {
 		WP_CLI::line( wp_json_encode( Karetaker_Status::snapshot(), JSON_PRETTY_PRINT ) );
@@ -70,6 +84,11 @@ class Karetaker_CLI {
 	 *
 	 * [--budget=<seconds>]
 	 * : Time budget. Default 15.
+	 *
+	 * @since 0.1.0
+	 * @param array $args Positional arguments (unused).
+	 * @param array $assoc Associative flags: budget.
+	 * @return void
 	 */
 	public function scan( $args, $assoc ) {
 		$budget  = isset( $assoc['budget'] ) ? (int) $assoc['budget'] : null;
@@ -89,6 +108,10 @@ class Karetaker_CLI {
 	 *
 	 * <code>
 	 * : The event code.
+	 *
+	 * @since 0.1.0
+	 * @param array $args Positional arguments; [0] is the event code.
+	 * @return void
 	 */
 	public function emit( $args ) {
 		$id = Karetaker_Events::record( $args[0], array( 'source' => 'cli' ) );

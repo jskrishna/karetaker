@@ -13,10 +13,22 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 }
 
+/**
+ * WP_List_Table for the Activity events log.
+ *
+ * @since 0.1.0
+ * @package Karetaker
+ */
 class Karetaker_List_Table extends WP_List_Table {
 
 	const PER_PAGE = 20;
 
+	/**
+	 * Sets up the activity events list table.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public function __construct() {
 		parent::__construct(
 			array(
@@ -27,6 +39,12 @@ class Karetaker_List_Table extends WP_List_Table {
 		);
 	}
 
+	/**
+	 * Column headers for the activity table.
+	 *
+	 * @since 0.1.0
+	 * @return array<string, string>
+	 */
 	public function get_columns() {
 		return array(
 			'event_time' => __( 'Time (UTC)', 'karetaker' ),
@@ -38,6 +56,12 @@ class Karetaker_List_Table extends WP_List_Table {
 		);
 	}
 
+	/**
+	 * Loads one page of events and pagination args.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public function prepare_items() {
 		$per_page     = self::PER_PAGE;
 		$current_page = max( 1, (int) $this->get_pagenum() );
@@ -61,6 +85,14 @@ class Karetaker_List_Table extends WP_List_Table {
 		);
 	}
 
+	/**
+	 * Renders a single cell for the given column.
+	 *
+	 * @since 0.1.0
+	 * @param object $item Event row object.
+	 * @param string $column_name Column key.
+	 * @return string
+	 */
 	public function column_default( $item, $column_name ) {
 		switch ( $column_name ) {
 			case 'event_time':
@@ -90,6 +122,12 @@ class Karetaker_List_Table extends WP_List_Table {
 		}
 	}
 
+	/**
+	 * Message when the events table is empty.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public function no_items() {
 		echo esc_html__( 'No events recorded yet.', 'karetaker' );
 	}

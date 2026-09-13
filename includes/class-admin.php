@@ -9,12 +9,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Tools → Karetaker admin UI and save handlers.
+ *
+ * @since 0.1.0
+ * @package Karetaker
+ */
 class Karetaker_Admin {
 
 	const PAGE_SLUG = 'karetaker';
 
 	const TABS = array( 'overview', 'activity', 'harden', 'settings' );
 
+	/**
+	 * Registers the Tools menu page, save handlers, and notices.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'register_menu' ) );
 		add_action( 'admin_post_karetaker_save_settings', array( __CLASS__, 'handle_save_settings' ) );
@@ -26,6 +38,12 @@ class Karetaker_Admin {
 		add_action( 'admin_notices', array( __CLASS__, 'maybe_agency_token_notice' ) );
 	}
 
+	/**
+	 * Adds Tools → Karetaker for users with manage_options.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function register_menu() {
 		add_management_page(
 			__( 'Karetaker', 'karetaker' ),
@@ -36,6 +54,12 @@ class Karetaker_Admin {
 		);
 	}
 
+	/**
+	 * Resolves the active admin tab from the request.
+	 *
+	 * @since 0.1.0
+	 * @return string
+	 */
 	public static function current_tab() {
 		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'overview';
 
@@ -46,6 +70,12 @@ class Karetaker_Admin {
 		return $tab;
 	}
 
+	/**
+	 * Renders the Karetaker Tools page shell and active tab.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function render_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to access this page.', 'karetaker' ) );
@@ -71,6 +101,13 @@ class Karetaker_Admin {
 		<?php
 	}
 
+	/**
+	 * Outputs the tab navigation.
+	 *
+	 * @since 0.1.0
+	 * @param string $current Active tab slug.
+	 * @return void
+	 */
 	private static function render_tabs( $current ) {
 		$base = admin_url( 'tools.php?page=' . self::PAGE_SLUG );
 		$labels = array(
@@ -91,6 +128,12 @@ class Karetaker_Admin {
 		<?php
 	}
 
+	/**
+	 * Renders the Overview tab summary table.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	private static function render_overview() {
 		$state     = Karetaker_Scanner::state();
 		$last_run  = isset( $state['last_run'] ) ? (string) $state['last_run'] : '';
@@ -189,6 +232,12 @@ class Karetaker_Admin {
 		<?php
 	}
 
+	/**
+	 * Renders the Activity list table.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	private static function render_activity() {
 		$table = new Karetaker_List_Table();
 		$table->prepare_items();
@@ -199,6 +248,12 @@ class Karetaker_Admin {
 		<?php
 	}
 
+	/**
+	 * Renders the Harden toggles form (manage_options + nonce on save).
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	private static function render_harden() {
 		$desired = Karetaker_Harden::desired();
 		$meta    = self::harden_field_meta();
@@ -255,6 +310,12 @@ class Karetaker_Admin {
 		<?php
 	}
 
+	/**
+	 * Labels and help text for each harden toggle.
+	 *
+	 * @since 0.1.0
+	 * @return array<string, array{label: string, help: string}>
+	 */
 	private static function harden_field_meta() {
 		return array(
 			'headers'       => array(
@@ -288,6 +349,12 @@ class Karetaker_Admin {
 		);
 	}
 
+	/**
+	 * Renders alerts, row-cap, proxy, and agency settings forms.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	private static function render_settings() {
 		$settings = Karetaker_Settings::all();
 		$email    = isset( $settings['alert_email'] ) ? (string) $settings['alert_email'] : '';
@@ -387,6 +454,12 @@ class Karetaker_Admin {
 		<?php
 	}
 
+	/**
+	 * Renders agency token generate / regenerate / clear controls.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	private static function render_agency_settings() {
 		$token = Karetaker_Settings::agency_token();
 		$has   = '' !== $token;
@@ -440,6 +513,12 @@ class Karetaker_Admin {
 		<?php
 	}
 
+	/**
+	 * Saves Settings tab fields. Requires manage_options and karetaker_save_settings nonce.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function handle_save_settings() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to save these settings.', 'karetaker' ) );
@@ -487,6 +566,12 @@ class Karetaker_Admin {
 		exit;
 	}
 
+	/**
+	 * Saves Harden Desired map and records setting_changed. Requires manage_options and nonce.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function handle_save_harden() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to save these settings.', 'karetaker' ) );
@@ -530,18 +615,43 @@ class Karetaker_Admin {
 		exit;
 	}
 
+	/**
+	 * Generates a new agency token.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function handle_agency_generate() {
 		self::handle_agency_token_action( 'generated' );
 	}
 
+	/**
+	 * Regenerates the agency token, invalidating the previous one.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function handle_agency_regenerate() {
 		self::handle_agency_token_action( 'regenerated' );
 	}
 
+	/**
+	 * Clears the agency token and turns the channel off.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function handle_agency_clear() {
 		self::handle_agency_token_action( 'cleared' );
 	}
 
+	/**
+	 * Shared generate / regenerate / clear handler. Requires manage_options and agency nonce.
+	 *
+	 * @since 0.1.0
+	 * @param string $value Audit value: generated, regenerated, or cleared.
+	 * @return void
+	 */
 	private static function handle_agency_token_action( $value ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to change the agency token.', 'karetaker' ) );
@@ -583,10 +693,22 @@ class Karetaker_Admin {
 		exit;
 	}
 
+	/**
+	 * Transient key for the one-time plaintext token notice.
+	 *
+	 * @since 0.1.0
+	 * @return string
+	 */
 	private static function agency_token_once_key() {
 		return 'karetaker_agency_token_once_' . get_current_user_id();
 	}
 
+	/**
+	 * Shows the one-time full agency token after generate or regenerate.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function maybe_agency_token_notice() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -615,6 +737,12 @@ class Karetaker_Admin {
 		<?php
 	}
 
+	/**
+	 * Shows a success notice after settings or harden save redirects.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function maybe_settings_notice() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
@@ -637,6 +765,13 @@ class Karetaker_Admin {
 		<?php
 	}
 
+	/**
+	 * Parses textarea lines into unique plausible IPs or CIDRs.
+	 *
+	 * @since 0.1.0
+	 * @param string $raw Raw textarea value.
+	 * @return string[]
+	 */
 	private static function sanitize_proxy_lines( $raw ) {
 		$lines = preg_split( '/\r\n|\r|\n/', (string) $raw );
 		$clean = array();
@@ -661,6 +796,13 @@ class Karetaker_Admin {
 		return array_values( array_unique( $clean ) );
 	}
 
+	/**
+	 * Whether a line looks like an IPv4/IPv6 address or CIDR.
+	 *
+	 * @since 0.1.0
+	 * @param string $value Single proxy line.
+	 * @return bool
+	 */
 	private static function is_plausible_proxy( $value ) {
 		if ( false !== strpos( $value, '/' ) ) {
 			$parts = explode( '/', $value, 2 );

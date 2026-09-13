@@ -3,12 +3,18 @@
  * Event recorder.
  *
  * @package Karetaker
+ * @since 0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Persists audit events and exposes severity, context, IP, and query helpers.
+ *
+ * @since 0.1.0
+ */
 class Karetaker_Events {
 
 	const SEVERITY_LOG       = 0;
@@ -22,6 +28,12 @@ class Karetaker_Events {
 
 	private static $booted = false;
 
+	/**
+	 * Marks the events module as initialized (idempotent).
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function init() {
 		if ( self::$booted ) {
 			return;
@@ -30,6 +42,12 @@ class Karetaker_Events {
 		self::$booted = true;
 	}
 
+	/**
+	 * Returns known event codes mapped to severity levels.
+	 *
+	 * @since 0.1.0
+	 * @return array<string, int> Event code => severity constant.
+	 */
 	public static function codes() {
 		return array(
 			'admin_user_added'      => self::SEVERITY_ACT,
@@ -55,16 +73,37 @@ class Karetaker_Events {
 		);
 	}
 
+	/**
+	 * Resolves the severity for a known event code.
+	 *
+	 * @since 0.1.0
+	 * @param string $code Event code.
+	 * @return int Severity constant; defaults to SEVERITY_LOG for unknown codes.
+	 */
 	public static function severity_for( $code ) {
 		$codes = self::codes();
 
 		return isset( $codes[ $code ] ) ? $codes[ $code ] : self::SEVERITY_LOG;
 	}
 
+	/**
+	 * Whether the given string is a registered event code.
+	 *
+	 * @since 0.1.0
+	 * @param string $code Event code.
+	 * @return bool
+	 */
 	public static function is_known_code( $code ) {
 		return array_key_exists( $code, self::codes() );
 	}
 
+	/**
+	 * Normalizes event context to safe scalar values with size limits.
+	 *
+	 * @since 0.1.0
+	 * @param mixed $context Raw context (non-arrays become empty).
+	 * @return array<string, bool|int|float|string> Sanitized context.
+	 */
 	public static function sanitize_context( $context ) {
 		if ( ! is_array( $context ) ) {
 			return array();
@@ -111,6 +150,15 @@ class Karetaker_Events {
 		return $clean;
 	}
 
+	/**
+	 * Inserts an event row when the code is known and Karetaker is enabled.
+	 *
+	 * @since 0.1.0
+	 * @param string               $code    Event code.
+	 * @param array<string, mixed> $context Optional context (sanitized before storage).
+	 * @param int|null             $user_id Acting user ID; current user when null.
+	 * @return int Insert ID on success, 0 when skipped or insert failed.
+	 */
 	public static function record( $code, array $context = array(), $user_id = null ) {
 		global $wpdb;
 
@@ -162,6 +210,14 @@ class Karetaker_Events {
 		return $id;
 	}
 
+	/**
+	 * Tests whether an IP address falls within a CIDR range or equals a host.
+	 *
+	 * @since 0.1.0
+	 * @param string $ip   IP address.
+	 * @param string $cidr CIDR notation or single IP.
+	 * @return bool
+	 */
 	public static function ip_in_cidr( $ip, $cidr ) {
 		if ( false === strpos( $cidr, '/' ) ) {
 			return $ip === $cidr;
@@ -201,6 +257,12 @@ class Karetaker_Events {
 		return ( $packed_ip[ $whole ] & $mask ) === ( $packed_subnet[ $whole ] & $mask );
 	}
 
+	/**
+	 * Determines the client IP, optionally from a trusted forwarded header.
+	 *
+	 * @since 0.1.0
+	 * @return string Valid IP string, or empty when unavailable.
+	 */
 	public static function client_ip() {
 		if ( empty( $_SERVER['REMOTE_ADDR'] ) ) {
 			return '';
@@ -244,6 +306,21 @@ class Karetaker_Events {
 		return $candidate ? $candidate : $remote;
 	}
 
+	/**
+	 * Fetches events from the database with optional filters.
+	 *
+	 * @since 0.1.0
+	 * @param array<string, mixed> $args {
+	 *     Optional query arguments.
+	 *
+	 *     @type int         $limit        Max rows (1–500, default 50).
+	 *     @type int         $offset       Row offset (default 0).
+	 *     @type int|null    $min_severity Minimum severity inclusive.
+	 *     @type string      $code         Exact event_code filter.
+	 *     @type string      $since        Minimum event_time (MySQL datetime).
+	 * }
+	 * @return array<int, object> Hydrated event rows.
+	 */
 	public static function query( array $args = array() ) {
 		global $wpdb;
 
@@ -287,6 +364,13 @@ class Karetaker_Events {
 		return array_map( array( __CLASS__, 'hydrate' ), $rows ? $rows : array() );
 	}
 
+	/**
+	 * Decodes stored fields on a database row for display.
+	 *
+	 * @since 0.1.0
+	 * @param object $row Raw event row from the database.
+	 * @return object Same row with typed severity, user_id, context array, and ip_display.
+	 */
 	public static function hydrate( $row ) {
 		$row->severity   = (int) $row->severity;
 		$row->user_id    = (int) $row->user_id;

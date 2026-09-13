@@ -9,10 +9,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * One-checkbox catastrophe checks and sticky state.
+ *
+ * @since 0.1.0
+ * @package Karetaker
+ */
 class Karetaker_Guard {
 
 	const CHECKS = array( 'blog_public', 'mail_failed', 'admin_email_invalid', 'no_administrator' );
 
+	/**
+	 * Hooks option, mail, and role changes that can trip Guard checks.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function init() {
 		add_action( 'update_option_blog_public', array( __CLASS__, 'on_blog_public' ), 10, 2 );
 		add_action( 'update_option_admin_email', array( __CLASS__, 'on_admin_email_option' ), 10, 2 );
@@ -23,6 +35,13 @@ class Karetaker_Guard {
 		add_action( 'deleted_user', array( __CLASS__, 'on_user_deleted' ), 20, 3 );
 	}
 
+	/**
+	 * Evaluates blog_public, admin email, and administrator presence for a scan run.
+	 *
+	 * @since 0.1.0
+	 * @param array &$state Scan state (updated by reference).
+	 * @return string
+	 */
 	public static function scan( array &$state ) {
 		$tripped = 0;
 
@@ -43,6 +62,16 @@ class Karetaker_Guard {
 		return $tripped ? ( 'tripped:' . $tripped ) : ( $mail ? 'clean:mail_still_bad' : 'clean' );
 	}
 
+	/**
+	 * Records guard_tripped when a check newly becomes bad and updates sticky state.
+	 *
+	 * @since 0.1.0
+	 * @param string $check Check key from CHECKS.
+	 * @param bool $is_bad Whether the check is currently bad.
+	 * @param array $context Extra context stored on the event.
+	 * @param array &$state Scan state (updated by reference).
+	 * @return bool
+	 */
 	public static function evaluate( $check, $is_bad, array $context, array &$state ) {
 		$check = sanitize_key( $check );
 		if ( ! in_array( $check, self::CHECKS, true ) ) {
@@ -74,15 +103,33 @@ class Karetaker_Guard {
 		return $recorded;
 	}
 
+	/**
+	 * Whether search engines are discouraged (blog_public is 0).
+	 *
+	 * @since 0.1.0
+	 * @return bool
+	 */
 	public static function is_blog_public_bad() {
 		return '0' === (string) get_option( 'blog_public' );
 	}
 
+	/**
+	 * Whether the site admin email is empty or invalid.
+	 *
+	 * @since 0.1.0
+	 * @return bool
+	 */
 	public static function is_admin_email_bad() {
 		$email = (string) get_option( 'admin_email' );
 		return '' === $email || ! is_email( $email );
 	}
 
+	/**
+	 * Counts users with the manage_options capability (capped sample of 2).
+	 *
+	 * @since 0.1.0
+	 * @return int
+	 */
 	public static function administrator_count() {
 		$users = get_users(
 			array(
@@ -94,12 +141,28 @@ class Karetaker_Guard {
 		return is_array( $users ) ? count( $users ) : 0;
 	}
 
+	/**
+	 * Re-evaluates blog_public after the option updates.
+	 *
+	 * @since 0.1.0
+	 * @param mixed $old Previous value.
+	 * @param mixed $new New value.
+	 * @return void
+	 */
 	public static function on_blog_public( $old, $new ) {
 		$state = Karetaker_Scanner::state();
 		self::evaluate( 'blog_public', '0' === (string) $new, array( 'old' => (string) $old, 'new' => (string) $new ), $state );
 		Karetaker_Scanner::save_state( $state );
 	}
 
+	/**
+	 * Re-evaluates admin email validity after the option updates.
+	 *
+	 * @since 0.1.0
+	 * @param mixed $old Previous value.
+	 * @param mixed $new New value.
+	 * @return void
+	 */
 	public static function on_admin_email_option( $old, $new ) {
 		$state = Karetaker_Scanner::state();
 		$bad   = '' === (string) $new || ! is_email( (string) $new );
@@ -107,6 +170,13 @@ class Karetaker_Guard {
 		Karetaker_Scanner::save_state( $state );
 	}
 
+	/**
+	 * Trips the mail_failed Guard check when wp_mail fails.
+	 *
+	 * @since 0.1.0
+	 * @param mixed $error WP_Error or failure payload from wp_mail_failed.
+	 * @return void
+	 */
 	public static function on_mail_failed( $error ) {
 		$message = '';
 		if ( is_wp_error( $error ) ) {
@@ -122,6 +192,12 @@ class Karetaker_Guard {
 		Karetaker_Scanner::save_state( $state );
 	}
 
+	/**
+	 * Re-evaluates whether any administrator remains.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function maybe_check_administrators() {
 		$state = Karetaker_Scanner::state();
 		$count = self::administrator_count();
@@ -129,18 +205,52 @@ class Karetaker_Guard {
 		Karetaker_Scanner::save_state( $state );
 	}
 
+	/**
+	 * Re-checks administrators after set_user_role.
+	 *
+	 * @since 0.1.0
+	 * @param int $user_id User ID.
+	 * @param string $role New role.
+	 * @param array $old_roles Previous roles.
+	 * @return void
+	 */
 	public static function on_user_capability_change( $user_id, $role, $old_roles ) {
 		self::maybe_check_administrators();
 	}
 
+	/**
+	 * Re-checks administrators after add_user_role.
+	 *
+	 * @since 0.1.0
+	 * @param int $user_id User ID.
+	 * @param string $role Role added.
+	 * @return void
+	 */
 	public static function on_user_capability_change_add( $user_id, $role ) {
 		self::maybe_check_administrators();
 	}
 
+	/**
+	 * Re-checks administrators after remove_user_role.
+	 *
+	 * @since 0.1.0
+	 * @param int $user_id User ID.
+	 * @param string $role Role removed.
+	 * @return void
+	 */
 	public static function on_user_capability_change_remove( $user_id, $role ) {
 		self::maybe_check_administrators();
 	}
 
+	/**
+	 * Re-checks administrators after a user is deleted.
+	 *
+	 * @since 0.1.0
+	 * @param int $user_id Deleted user ID.
+	 * @param int|null $reassign Reassignment target.
+	 * @param WP_User|null $user Deleted user object when available.
+	 * @return void
+	 */
 	public static function on_user_deleted( $user_id, $reassign, $user = null ) {
 		self::maybe_check_administrators();
 	}

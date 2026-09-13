@@ -9,6 +9,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Scheduled integrity and Guard scan runner.
+ *
+ * @since 0.1.0
+ * @package Karetaker
+ */
 class Karetaker_Scanner {
 
 	const STATE_OPTION = 'karetaker_scan_state';
@@ -21,16 +27,34 @@ class Karetaker_Scanner {
 	private static $started_at = 0;
 	private static $budget     = self::DEFAULT_BUDGET;
 
+	/**
+	 * Registers the twice-daily scan cron callback.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function init() {
 		add_action( self::CRON_HOOK, array( __CLASS__, 'run' ) );
 	}
 
+	/**
+	 * Schedules the scan cron if it is not already scheduled.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function schedule() {
 		if ( ! wp_next_scheduled( self::CRON_HOOK ) ) {
 			wp_schedule_event( time() + 300, 'twicedaily', self::CRON_HOOK );
 		}
 	}
 
+	/**
+	 * Removes all scheduled scan cron events.
+	 *
+	 * @since 0.1.0
+	 * @return void
+	 */
 	public static function unschedule() {
 		$timestamp = wp_next_scheduled( self::CRON_HOOK );
 
@@ -40,20 +64,46 @@ class Karetaker_Scanner {
 		}
 	}
 
+	/**
+	 * Returns the persisted scan state option.
+	 *
+	 * @since 0.1.0
+	 * @return array
+	 */
 	public static function state() {
 		$state = get_option( self::STATE_OPTION, array() );
 
 		return is_array( $state ) ? $state : array();
 	}
 
+	/**
+	 * Persists scan state without autoloading.
+	 *
+	 * @since 0.1.0
+	 * @param array $state Scan state payload.
+	 * @return void
+	 */
 	public static function save_state( array $state ) {
 		update_option( self::STATE_OPTION, $state, false );
 	}
 
+	/**
+	 * Whether the current run has exceeded its time budget.
+	 *
+	 * @since 0.1.0
+	 * @return bool
+	 */
 	private static function out_of_time() {
 		return ( microtime( true ) - self::$started_at ) > self::$budget;
 	}
 
+	/**
+	 * Runs all scan slices within the time budget and records scan_ran.
+	 *
+	 * @since 0.1.0
+	 * @param int|null $budget Optional seconds budget; defaults to DEFAULT_BUDGET.
+	 * @return array
+	 */
 	public static function run( $budget = null ) {
 		self::$started_at = microtime( true );
 		self::$budget     = null === $budget ? self::DEFAULT_BUDGET : max( 1, (int) $budget );
@@ -88,6 +138,13 @@ class Karetaker_Scanner {
 		return $results;
 	}
 
+	/**
+	 * Builds a relative-path => md5 map for every file under a directory.
+	 *
+	 * @since 0.1.0
+	 * @param string $dir Absolute directory path.
+	 * @return array<string, string>
+	 */
 	public static function hash_dir( $dir ) {
 		$map = array();
 
@@ -116,6 +173,13 @@ class Karetaker_Scanner {
 		return $map;
 	}
 
+	/**
+	 * Diffs must-use plugin file hashes against the previous baseline.
+	 *
+	 * @since 0.1.0
+	 * @param array &$state Scan state (updated by reference).
+	 * @return string
+	 */
 	public static function scan_muplugins( &$state ) {
 		if ( ! defined( 'WPMU_PLUGIN_DIR' ) ) {
 			return 'no_dir';
@@ -157,6 +221,13 @@ class Karetaker_Scanner {
 		return 'changed';
 	}
 
+	/**
+	 * Walks uploads for executable extensions in budgeted chunks.
+	 *
+	 * @since 0.1.0
+	 * @param array &$state Scan state (updated by reference).
+	 * @return string
+	 */
 	public static function scan_uploads( &$state ) {
 		$uploads = wp_get_upload_dir();
 		$dir     = isset( $uploads['basedir'] ) ? $uploads['basedir'] : '';
@@ -228,6 +299,12 @@ class Karetaker_Scanner {
 		return ( $done ? 'clean:' : 'partial:' ) . $checked;
 	}
 
+	/**
+	 * Returns known core and plugin cron hook names treated as non-orphan.
+	 *
+	 * @since 0.1.0
+	 * @return string[]
+	 */
 	public static function core_cron_hooks() {
 		return array(
 			'wp_version_check',
@@ -249,6 +326,13 @@ class Karetaker_Scanner {
 		);
 	}
 
+	/**
+	 * Detects orphan cron hooks confirmed across consecutive runs.
+	 *
+	 * @since 0.1.0
+	 * @param array &$state Scan state (updated by reference).
+	 * @return string
+	 */
 	public static function scan_cron( &$state ) {
 		if ( ! function_exists( '_get_cron_array' ) ) {
 			return 'unavailable';
@@ -306,6 +390,13 @@ class Karetaker_Scanner {
 		return 'found:' . count( $fresh );
 	}
 
+	/**
+	 * Verifies WordPress.org checksums for core and active plugins within budget.
+	 *
+	 * @since 0.1.0
+	 * @param array &$state Scan state (updated by reference).
+	 * @return string
+	 */
 	public static function scan_checksums( &$state ) {
 		$deadline = self::$started_at + self::$budget;
 		$out      = array();
@@ -372,10 +463,23 @@ class Karetaker_Scanner {
 		return implode( ' ', $out );
 	}
 
+	/**
+	 * Option names monitored for unexpected value changes.
+	 *
+	 * @since 0.1.0
+	 * @return string[]
+	 */
 	public static function watched_options() {
 		return array( 'users_can_register', 'default_role', 'siteurl', 'home' );
 	}
 
+	/**
+	 * Compares watched option effective values to the previous baseline.
+	 *
+	 * @since 0.1.0
+	 * @param array &$state Scan state (updated by reference).
+	 * @return string
+	 */
 	public static function scan_options( &$state ) {
 		global $wpdb;
 
@@ -432,6 +536,13 @@ class Karetaker_Scanner {
 		return 'changed:' . count( $changed );
 	}
 
+	/**
+	 * Runs Guard catastrophe checks as a scan slice.
+	 *
+	 * @since 0.1.0
+	 * @param array &$state Scan state (updated by reference).
+	 * @return string
+	 */
 	public static function scan_guard( &$state ) {
 		return Karetaker_Guard::scan( $state );
 	}

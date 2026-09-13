@@ -1,20 +1,29 @@
 # Karetaker — why the code is what it is
 
-No comments in the code body. The plugin and file headers stay, because WordPress parses
-them and Plugin Check requires them. Everything else is here.
+PHPDoc / WordPress-Docs blocks live on files, classes, and methods (Plugin Check /
+`WordPress-Docs`). Design rationale stays here — not in essay-length `@return` tags.
 
 Design rationale, the research behind it and the out-of-scope list live in
 `docs/superpowers/specs/2026-09-13-karetaker-security-plugin-design.md` in the site repo.
 Read that first; this file only covers what looks removable from inside the code.
 
+
+## `readme.txt`
+
+Present as of 2026-09-13 wp.org prep. Headers: Stable tag `0.1.0`, Requires at least `6.2`,
+Requires PHP `7.4`, Tested up to `7.1` (Local site `wp_version` at write time). Screenshots
+section omitted until assets exist. Spec/plan:
+`docs/superpowers/specs/2026-09-13-karetaker-wporg-prep-design.md`,
+`docs/superpowers/plans/2026-09-13-karetaker-wporg-prep.md`.
+
 ## `karetaker.php`
 
-**`Update URI: false` is deliberate and must stay.** Without it, a slug collision lets
-WordPress.org push a *different* plugin of a similar name over this one — that is the
-documented reason the header exists. `false` disables update checks entirely, which is
-correct while the plugin is installed by file copy. If it is ever listed on WordPress.org,
-remove the header; if it is ever self-hosted, point it at the update host. Never leave it
-blank.
+**`Update URI: false` is deliberate while distributing by hand.** Without it, a slug
+collision lets WordPress.org push a *different* plugin of a similar name over this one —
+that is the documented reason the header exists. `false` disables update checks entirely,
+which is correct for file-copy installs. **Remove the header immediately before the first
+WordPress.org upload**; if it is ever self-hosted, point it at the update host. Never leave
+it blank.
 
 **The schema check is NOT on `plugins_loaded`, and that is a performance fix, not an
 oversight.** The first version called `Karetaker_Schema::maybe_upgrade()` from

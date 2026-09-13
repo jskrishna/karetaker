@@ -3,12 +3,18 @@
  * Verification against the checksums WordPress.org publishes.
  *
  * @package Karetaker
+ * @since 0.1.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Fetches official checksums and compares on-disk files for core and plugins.
+ *
+ * @since 0.1.0
+ */
 class Karetaker_Checksums {
 
 	const CORE_ENDPOINT   = 'https://api.wordpress.org/core/checksums/1.0/';
@@ -21,6 +27,14 @@ class Karetaker_Checksums {
 	const SANITY_RATIO = 0.2;
 	const SANITY_FLOOR = 25;
 
+	/**
+	 * GETs JSON from a URL with transient caching.
+	 *
+	 * @since 0.1.0
+	 * @param string $url       Request URL.
+	 * @param string $cache_key Transient key for the decoded array.
+	 * @return array<string, mixed>|WP_Error Decoded JSON or error.
+	 */
 	public static function fetch_json( $url, $cache_key ) {
 		$cached = get_transient( $cache_key );
 
@@ -56,6 +70,14 @@ class Karetaker_Checksums {
 		return $data;
 	}
 
+	/**
+	 * Whether the actual hash matches any expected hash using timing-safe compare.
+	 *
+	 * @since 0.1.0
+	 * @param string|array<int, string> $expected One or more expected hash strings.
+	 * @param string                    $actual   Computed file hash.
+	 * @return bool
+	 */
 	public static function hash_matches( $expected, $actual ) {
 		foreach ( (array) $expected as $candidate ) {
 			if ( is_string( $candidate ) && hash_equals( $candidate, $actual ) ) {
@@ -66,6 +88,16 @@ class Karetaker_Checksums {
 		return false;
 	}
 
+	/**
+	 * Compares core files under ABSPATH to WordPress.org checksums for this version.
+	 *
+	 * @since 0.1.0
+	 * @param float                $deadline      Unix microtime stop; 0 for no limit.
+	 * @param int                  $offset        Skip file index through this position (resume).
+	 * @param array<int, string>   $carry         Relative paths already flagged modified.
+	 * @param int                  $carry_checked Files already counted in a partial run.
+	 * @return array<string, mixed> Result with status complete|partial|unavailable and counts.
+	 */
 	public static function verify_core( $deadline = 0, $offset = 0, array $carry = array(), $carry_checked = 0 ) {
 		$version = get_bloginfo( 'version' );
 		$locale  = get_locale();
@@ -146,12 +178,27 @@ class Karetaker_Checksums {
 		);
 	}
 
+	/**
+	 * Derives the plugin slug directory from a plugin bootstrap file path.
+	 *
+	 * @since 0.1.0
+	 * @param string $plugin_file Plugin path relative to wp-content/plugins.
+	 * @return string
+	 */
 	public static function plugin_slug( $plugin_file ) {
 		$parts = explode( '/', $plugin_file );
 
 		return count( $parts ) > 1 ? $parts[0] : basename( $plugin_file, '.php' );
 	}
 
+	/**
+	 * Compares a plugin's files to wordpress.org checksums for its reported version.
+	 *
+	 * @since 0.1.0
+	 * @param string $plugin_file Plugin path relative to wp-content/plugins.
+	 * @param float  $deadline    Unix microtime stop; 0 for no limit.
+	 * @return array<string, mixed> Result with status complete|partial|skipped|unavailable.
+	 */
 	public static function verify_plugin( $plugin_file, $deadline = 0 ) {
 		if ( ! function_exists( 'get_plugin_data' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -217,6 +264,14 @@ class Karetaker_Checksums {
 		);
 	}
 
+	/**
+	 * Whether mismatch counts suggest a bad checksum fetch rather than real tampering.
+	 *
+	 * @since 0.1.0
+	 * @param int $checked        Files compared.
+	 * @param int $modified_count Paths that failed hash match.
+	 * @return bool
+	 */
 	public static function looks_broken( $checked, $modified_count ) {
 		if ( $modified_count < self::SANITY_FLOOR ) {
 			return false;
@@ -229,6 +284,14 @@ class Karetaker_Checksums {
 		return ( $modified_count / $checked ) > self::SANITY_RATIO;
 	}
 
+	/**
+	 * Emits file_hash_mismatch or a suppressed scan_ran event for checksum results.
+	 *
+	 * @since 0.1.0
+	 * @param string               $subject Label for the scanned target (e.g. core or plugin).
+	 * @param array<string, mixed> $result  verify_core or verify_plugin result array.
+	 * @return bool True when file_hash_mismatch was recorded; false otherwise.
+	 */
 	public static function report( $subject, $result ) {
 		if ( ! isset( $result['modified'] ) || ! $result['modified'] ) {
 			return false;
