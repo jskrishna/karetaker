@@ -27,6 +27,11 @@ class Karetaker_Harden {
 		'app_passwords',
 	);
 
+	/**
+	 * Whether Harden::init has already registered hooks.
+	 *
+	 * @var bool
+	 */
 	private static $booted = false;
 
 	/**
@@ -54,7 +59,7 @@ class Karetaker_Harden {
 	 * @return array<string, bool>
 	 */
 	public static function desired() {
-		$h = Karetaker_Settings::harden();
+		$h   = Karetaker_Settings::harden();
 		$out = array();
 
 		foreach ( self::KEYS as $key ) {
@@ -110,7 +115,8 @@ class Karetaker_Harden {
 
 		if ( self::is_on( 'file_editor' ) ) {
 			if ( ! defined( 'DISALLOW_FILE_EDIT' ) ) {
-				define( 'DISALLOW_FILE_EDIT', true );
+				// WordPress core constant — not a plugin-owned symbol.
+				define( 'DISALLOW_FILE_EDIT', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound
 			}
 		}
 
@@ -231,11 +237,12 @@ class Karetaker_Harden {
 			return;
 		}
 
-		if ( ! isset( $_GET['author'] ) ) {
+		// Front-end author enum probe — no form nonce applies.
+		if ( ! isset( $_GET['author'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			return;
 		}
 
-		$author = sanitize_text_field( wp_unslash( $_GET['author'] ) );
+		$author = sanitize_text_field( wp_unslash( $_GET['author'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		if ( '' === $author || ! ctype_digit( $author ) ) {
 			return;
@@ -294,7 +301,7 @@ class Karetaker_Harden {
 	}
 
 	/**
-	 * pre_option_users_can_register callback that always returns 0.
+	 * Force registration closed via pre_option_users_can_register.
 	 *
 	 * @since 0.1.0
 	 * @param mixed $pre Short-circuit value (ignored).
@@ -320,7 +327,7 @@ class Karetaker_Harden {
 	 * Allows application passwords only for users with manage_options.
 	 *
 	 * @since 0.1.0
-	 * @param bool $available Upstream availability.
+	 * @param bool          $available Upstream availability.
 	 * @param WP_User|mixed $user User under consideration.
 	 * @return bool
 	 */
@@ -365,7 +372,8 @@ class Karetaker_Harden {
 					return 'Off';
 				}
 
-				return apply_filters( 'xmlrpc_enabled', true ) ? 'Enabled' : 'Disabled';
+				// Probe the core filter; not a plugin-owned hook name.
+				return apply_filters( 'xmlrpc_enabled', true ) ? 'Enabled' : 'Disabled'; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
 			case 'file_editor':
 				if ( defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT ) {

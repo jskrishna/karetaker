@@ -82,6 +82,7 @@ save a file. Nothing needs copying anywhere for it to run.
   new methods documented the same way; design rationale still lives in `CODE-NOTES.md`.
 - **Remove `Update URI: false` from `karetaker.php` immediately before the first .org upload**
   (keep it while distributing by hand — see `CODE-NOTES.md`).
-- Run Plugin Check and the WPCS / `WordPress-Docs` pass.
+- **WPCS pass is clean** (`composer install && composer phpcs` — 0 errors / 0 warnings). Still run **Plugin Check** in wp-admin once Local is up.
+- Re-run WPCS after any PHP change.
 - Confirm the slug is still free before the first upload; `karetaker` was confirmed free on
   2026-09-13 and a name can be taken between then and submission.

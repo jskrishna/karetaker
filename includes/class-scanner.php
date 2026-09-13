@@ -24,8 +24,19 @@ class Karetaker_Scanner {
 	const UPLOADS_PER_RUN  = 20000;
 	const EXECUTABLE_REGEX = '/\.(php|php\d|phtml|phps|phar|pht|phtm|cgi|pl|py|sh|shtml)$/i';
 
+	/**
+	 * Microtime when the current run started.
+	 *
+	 * @var float
+	 */
 	private static $started_at = 0;
-	private static $budget     = self::DEFAULT_BUDGET;
+
+	/**
+	 * Seconds budget for the current run.
+	 *
+	 * @var int
+	 */
+	private static $budget = self::DEFAULT_BUDGET;
 
 	/**
 	 * Registers the twice-daily scan cron callback.
@@ -117,8 +128,8 @@ class Karetaker_Scanner {
 				continue;
 			}
 
-			$method            = 'scan_' . $scan;
-			$results[ $scan ]  = self::$method( $state );
+			$method           = 'scan_' . $scan;
+			$results[ $scan ] = self::$method( $state );
 		}
 
 		$state['last_run']     = current_time( 'mysql', true );
@@ -437,15 +448,16 @@ class Karetaker_Scanner {
 			return implode( ' ', $out ) . ' plugins:none';
 		}
 
-		$cursor = isset( $state['plugin_cursor'] ) ? (int) $state['plugin_cursor'] : 0;
-		$done   = 0;
+		$cursor       = isset( $state['plugin_cursor'] ) ? (int) $state['plugin_cursor'] : 0;
+		$done         = 0;
+		$active_count = count( $active );
 
-		for ( $i = 0; $i < count( $active ) && $done < Karetaker_Checksums::PLUGINS_PER_RUN; $i++ ) {
+		for ( $i = 0; $i < $active_count && $done < Karetaker_Checksums::PLUGINS_PER_RUN; $i++ ) {
 			if ( self::out_of_time() ) {
 				break;
 			}
 
-			$index  = ( $cursor + $i ) % count( $active );
+			$index  = ( $cursor + $i ) % $active_count;
 			$plugin = $active[ $index ];
 
 			$result = Karetaker_Checksums::verify_plugin( $plugin, $deadline );

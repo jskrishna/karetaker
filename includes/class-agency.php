@@ -138,8 +138,8 @@ class Karetaker_Agency {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function get_status() {
-		$payload = Karetaker_Status::snapshot();
-		$token   = (string) Karetaker_Settings::get( 'agency_token' );
+		$payload        = Karetaker_Status::snapshot();
+		$token          = (string) Karetaker_Settings::get( 'agency_token' );
 		$payload['sig'] = self::sign( $payload, $token );
 
 		return rest_ensure_response( $payload );
@@ -183,7 +183,7 @@ class Karetaker_Agency {
 	 * HMAC-SHA256 signature over the canonical JSON payload.
 	 *
 	 * @since 0.1.0
-	 * @param array $payload Unsigned status payload.
+	 * @param array  $payload Unsigned status payload.
 	 * @param string $token Agency token.
 	 * @return string
 	 */

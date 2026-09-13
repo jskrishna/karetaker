@@ -16,7 +16,24 @@ section omitted until assets exist. Spec/plan:
 `docs/superpowers/specs/2026-09-13-karetaker-wporg-prep-design.md`,
 `docs/superpowers/plans/2026-09-13-karetaker-wporg-prep.md`.
 
+## PHPCS / WPCS
+
+`composer.json` (dev) installs WPCS 3.x; `composer phpcs` / `./vendor/bin/phpcs` uses
+`phpcs.xml.dist`. Run that before submission. `vendor/` is gitignored; commit
+`composer.lock` so the toolchain is reproducible.
+
+**PHPCompatibilityWP is not in the ruleset.** On PHP 8.5 the 9.x sniff fatals
+(`trim(null)`), so the pass is WordPress + prefix + text domain only. Re-add when a
+PHPCompatibility release supports 8.5.
+
+**Excluded on purpose:** `WordPress.DB.DirectDatabaseQuery.*` — the events table is the
+product; caching those reads would hide integrity signals. Schema DDL and prepared
+interpolated table names keep inline `phpcs:ignore` where needed. Front-end `?author=`
+and admin GET tab/notice reads use `NonceVerification.Recommended` ignores after the
+capability gate — they are not form POSTs.
+
 ## `karetaker.php`
+
 
 **`Update URI: false` is deliberate while distributing by hand.** Without it, a slug
 collision lets WordPress.org push a *different* plugin of a similar name over this one —

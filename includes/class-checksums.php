@@ -92,10 +92,10 @@ class Karetaker_Checksums {
 	 * Compares core files under ABSPATH to WordPress.org checksums for this version.
 	 *
 	 * @since 0.1.0
-	 * @param float                $deadline      Unix microtime stop; 0 for no limit.
-	 * @param int                  $offset        Skip file index through this position (resume).
-	 * @param array<int, string>   $carry         Relative paths already flagged modified.
-	 * @param int                  $carry_checked Files already counted in a partial run.
+	 * @param float              $deadline      Unix microtime stop; 0 for no limit.
+	 * @param int                $offset        Skip file index through this position (resume).
+	 * @param array<int, string> $carry         Relative paths already flagged modified.
+	 * @param int                $carry_checked Files already counted in a partial run.
 	 * @return array<string, mixed> Result with status complete|partial|unavailable and counts.
 	 */
 	public static function verify_core( $deadline = 0, $offset = 0, array $carry = array(), $carry_checked = 0 ) {
@@ -113,13 +113,22 @@ class Karetaker_Checksums {
 		$data = self::fetch_json( $url, 'karetaker_core_cs_' . md5( $version . $locale ) );
 
 		if ( is_wp_error( $data ) ) {
-			return array( 'status' => 'unavailable', 'reason' => $data->get_error_code() );
+			return array(
+				'status' => 'unavailable',
+				'reason' => $data->get_error_code(),
+			);
 		}
 
 		$files = isset( $data['checksums'] ) && is_array( $data['checksums'] ) ? $data['checksums'] : array();
 
 		if ( ! $files && 'en_US' !== $locale ) {
-			$url  = add_query_arg( array( 'version' => $version, 'locale' => 'en_US' ), self::CORE_ENDPOINT );
+			$url  = add_query_arg(
+				array(
+					'version' => $version,
+					'locale'  => 'en_US',
+				),
+				self::CORE_ENDPOINT
+			);
 			$data = self::fetch_json( $url, 'karetaker_core_cs_' . md5( $version . 'en_US' ) );
 
 			if ( ! is_wp_error( $data ) && isset( $data['checksums'] ) ) {
@@ -128,7 +137,10 @@ class Karetaker_Checksums {
 		}
 
 		if ( ! $files ) {
-			return array( 'status' => 'unavailable', 'reason' => 'empty' );
+			return array(
+				'status' => 'unavailable',
+				'reason' => 'empty',
+			);
 		}
 
 		$modified = $carry;
@@ -209,20 +221,31 @@ class Karetaker_Checksums {
 		$version = isset( $data['Version'] ) ? $data['Version'] : '';
 
 		if ( '' === $version ) {
-			return array( 'status' => 'skipped', 'reason' => 'no_version' );
+			return array(
+				'status' => 'skipped',
+				'reason' => 'no_version',
+			);
 		}
 
 		$url  = self::PLUGIN_ENDPOINT . rawurlencode( $slug ) . '/' . rawurlencode( $version ) . '.json';
 		$json = self::fetch_json( $url, 'karetaker_pl_cs_' . md5( $slug . $version ) );
 
 		if ( is_wp_error( $json ) ) {
-			return array( 'status' => 'unavailable', 'reason' => $json->get_error_code(), 'slug' => $slug );
+			return array(
+				'status' => 'unavailable',
+				'reason' => $json->get_error_code(),
+				'slug'   => $slug,
+			);
 		}
 
 		$files = isset( $json['files'] ) && is_array( $json['files'] ) ? $json['files'] : array();
 
 		if ( ! $files ) {
-			return array( 'status' => 'unavailable', 'reason' => 'empty', 'slug' => $slug );
+			return array(
+				'status' => 'unavailable',
+				'reason' => 'empty',
+				'slug'   => $slug,
+			);
 		}
 
 		$dir      = WP_PLUGIN_DIR . '/' . $slug;
@@ -231,7 +254,12 @@ class Karetaker_Checksums {
 
 		foreach ( $files as $rel => $hashes ) {
 			if ( $deadline && microtime( true ) > $deadline ) {
-				return array( 'status' => 'partial', 'slug' => $slug, 'checked' => $checked, 'modified' => $modified );
+				return array(
+					'status'   => 'partial',
+					'slug'     => $slug,
+					'checked'  => $checked,
+					'modified' => $modified,
+				);
 			}
 
 			$path = $dir . '/' . $rel;

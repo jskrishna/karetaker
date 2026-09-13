@@ -61,7 +61,8 @@ class Karetaker_Admin {
 	 * @return string
 	 */
 	public static function current_tab() {
-		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'overview';
+		// Tab switcher is a GET link; capability checked in render_page.
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		if ( ! in_array( $tab, self::TABS, true ) ) {
 			return 'overview';
@@ -109,12 +110,12 @@ class Karetaker_Admin {
 	 * @return void
 	 */
 	private static function render_tabs( $current ) {
-		$base = admin_url( 'tools.php?page=' . self::PAGE_SLUG );
+		$base   = admin_url( 'tools.php?page=' . self::PAGE_SLUG );
 		$labels = array(
-			'overview'  => __( 'Overview', 'karetaker' ),
-			'activity'  => __( 'Activity', 'karetaker' ),
-			'harden'    => __( 'Harden', 'karetaker' ),
-			'settings'  => __( 'Settings', 'karetaker' ),
+			'overview' => __( 'Overview', 'karetaker' ),
+			'activity' => __( 'Activity', 'karetaker' ),
+			'harden'   => __( 'Harden', 'karetaker' ),
+			'settings' => __( 'Settings', 'karetaker' ),
 		);
 		?>
 		<nav class="nav-tab-wrapper" aria-label="<?php echo esc_attr__( 'Karetaker sections', 'karetaker' ); ?>">
@@ -188,8 +189,8 @@ class Karetaker_Admin {
 							<ul style="margin:0;">
 								<?php foreach ( Karetaker_Guard::CHECKS as $check ) : ?>
 									<?php
-									$entry = isset( $guard[ $check ] ) && is_array( $guard[ $check ] ) ? $guard[ $check ] : array();
-									$bad   = ! empty( $entry['bad'] );
+									$entry       = isset( $guard[ $check ] ) && is_array( $guard[ $check ] ) ? $guard[ $check ] : array();
+									$bad         = ! empty( $entry['bad'] );
 									$since_check = ( $bad && ! empty( $entry['since'] ) ) ? (string) $entry['since'] : '';
 									?>
 									<li>
@@ -356,11 +357,11 @@ class Karetaker_Admin {
 	 * @return void
 	 */
 	private static function render_settings() {
-		$settings = Karetaker_Settings::all();
-		$email    = isset( $settings['alert_email'] ) ? (string) $settings['alert_email'] : '';
-		$enabled  = ! empty( $settings['alerts_enabled'] );
-		$row_cap  = Karetaker_Settings::row_cap();
-		$proxies  = isset( $settings['trusted_proxies'] ) && is_array( $settings['trusted_proxies'] )
+		$settings     = Karetaker_Settings::all();
+		$email        = isset( $settings['alert_email'] ) ? (string) $settings['alert_email'] : '';
+		$enabled      = ! empty( $settings['alerts_enabled'] );
+		$row_cap      = Karetaker_Settings::row_cap();
+		$proxies      = isset( $settings['trusted_proxies'] ) && is_array( $settings['trusted_proxies'] )
 			? $settings['trusted_proxies']
 			: array();
 		$proxies_text = implode( "\n", array_map( 'strval', $proxies ) );
@@ -461,8 +462,8 @@ class Karetaker_Admin {
 	 * @return void
 	 */
 	private static function render_agency_settings() {
-		$token = Karetaker_Settings::agency_token();
-		$has   = '' !== $token;
+		$token      = Karetaker_Settings::agency_token();
+		$has        = '' !== $token;
 		$status_url = rest_url( 'karetaker/v1/status' );
 		?>
 		<hr style="margin:2em 0 1.5em;" />
@@ -533,9 +534,15 @@ class Karetaker_Admin {
 
 		$enabled = ! empty( $_POST['alerts_enabled'] );
 
-		$row_cap = isset( $_POST['row_cap'] ) ? (int) wp_unslash( $_POST['row_cap'] ) : Karetaker_Settings::ROW_CAP_MIN;
+		if ( isset( $_POST['row_cap'] ) ) {
+			$row_cap = absint( wp_unslash( $_POST['row_cap'] ) );
+		} else {
+			$row_cap = Karetaker_Settings::ROW_CAP_MIN;
+		}
 
-		$proxies_raw = isset( $_POST['trusted_proxies'] ) ? (string) wp_unslash( $_POST['trusted_proxies'] ) : '';
+		$proxies_raw = isset( $_POST['trusted_proxies'] )
+			? sanitize_textarea_field( wp_unslash( $_POST['trusted_proxies'] ) )
+			: '';
 		$proxies     = self::sanitize_proxy_lines( $proxies_raw );
 
 		Karetaker_Settings::update(
@@ -556,9 +563,9 @@ class Karetaker_Admin {
 		wp_safe_redirect(
 			add_query_arg(
 				array(
-					'page'             => self::PAGE_SLUG,
-					'tab'              => 'settings',
-					'karetaker_saved'  => '1',
+					'page'            => self::PAGE_SLUG,
+					'tab'             => 'settings',
+					'karetaker_saved' => '1',
 				),
 				admin_url( 'tools.php' )
 			)
@@ -579,8 +586,16 @@ class Karetaker_Admin {
 
 		check_admin_referer( 'karetaker_save_harden' );
 
-		$posted = isset( $_POST['harden'] ) && is_array( $_POST['harden'] ) ? wp_unslash( $_POST['harden'] ) : array();
-		$next   = Karetaker_Harden::defaults();
+		$posted = array();
+		if ( isset( $_POST['harden'] ) && is_array( $_POST['harden'] ) ) {
+			$raw = wp_unslash( $_POST['harden'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- keys checked against KEYS below
+			foreach ( Karetaker_Harden::KEYS as $key ) {
+				if ( isset( $raw[ $key ] ) ) {
+					$posted[ $key ] = sanitize_text_field( (string) $raw[ $key ] );
+				}
+			}
+		}
+		$next = Karetaker_Harden::defaults();
 
 		foreach ( Karetaker_Harden::KEYS as $key ) {
 			$next[ $key ] = ! empty( $posted[ $key ] );
@@ -714,7 +729,7 @@ class Karetaker_Admin {
 			return;
 		}
 
-		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( self::PAGE_SLUG !== $page ) {
 			return;
 		}
@@ -748,13 +763,13 @@ class Karetaker_Admin {
 			return;
 		}
 
-		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( self::PAGE_SLUG !== $page ) {
 			return;
 		}
 
-		$saved_settings = ! empty( $_GET['karetaker_saved'] );
-		$saved_harden   = ! empty( $_GET['updated'] ) && 'harden' === self::current_tab();
+		$saved_settings = ! empty( $_GET['karetaker_saved'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$saved_harden   = ! empty( $_GET['updated'] ) && 'harden' === self::current_tab(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( ! $saved_settings && ! $saved_harden ) {
 			return;
 		}

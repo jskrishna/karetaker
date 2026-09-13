@@ -20,6 +20,11 @@ class Karetaker_Hooks {
 	const BURST_THRESHOLD = 10;
 	const BURST_WINDOW    = 900;
 
+	/**
+	 * True while inserting a user we are already observing.
+	 *
+	 * @var bool
+	 */
 	private static $creating = false;
 
 	/**
@@ -296,7 +301,13 @@ class Karetaker_Hooks {
 		}
 
 		if ( ! $new_value ) {
-			Karetaker_Events::record( 'setting_changed', array( 'option' => 'users_can_register', 'value' => '0' ) );
+			Karetaker_Events::record(
+				'setting_changed',
+				array(
+					'option' => 'users_can_register',
+					'value'  => '0',
+				)
+			);
 
 			return;
 		}
@@ -324,7 +335,13 @@ class Karetaker_Hooks {
 		}
 
 		if ( 'administrator' !== $new_value ) {
-			Karetaker_Events::record( 'setting_changed', array( 'option' => 'default_role', 'value' => (string) $new_value ) );
+			Karetaker_Events::record(
+				'setting_changed',
+				array(
+					'option' => 'default_role',
+					'value'  => (string) $new_value,
+				)
+			);
 
 			return;
 		}
@@ -332,8 +349,8 @@ class Karetaker_Hooks {
 		Karetaker_Events::record(
 			'registration_opened',
 			array(
-				'option'            => 'default_role',
-				'value'             => 'administrator',
+				'option'             => 'default_role',
+				'value'              => 'administrator',
 				'users_can_register' => (string) get_option( 'users_can_register' ),
 			)
 		);

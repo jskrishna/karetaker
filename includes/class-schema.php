@@ -99,7 +99,8 @@ class Karetaker_Schema {
 
 		$table = self::table();
 
-		$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// Table name is derived from $wpdb->prefix; cannot be a prepare placeholder.
+		$wpdb->query( "DROP TABLE IF EXISTS {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		delete_option( self::VERSION_OPTION );
 	}
@@ -139,7 +140,8 @@ class Karetaker_Schema {
 
 		$table = self::table();
 
-		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// Table name is derived from $wpdb->prefix; cannot be a prepare placeholder.
+		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
 	/**

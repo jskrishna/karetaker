@@ -24,8 +24,8 @@ class Karetaker_Status {
 	 * @return array<string,mixed>
 	 */
 	public static function snapshot() {
-		$state = Karetaker_Scanner::state();
-		$guard = isset( $state['guard'] ) && is_array( $state['guard'] ) ? $state['guard'] : array();
+		$state     = Karetaker_Scanner::state();
+		$guard     = isset( $state['guard'] ) && is_array( $state['guard'] ) ? $state['guard'] : array();
 		$guard_out = array();
 
 		foreach ( $guard as $check => $entry ) {

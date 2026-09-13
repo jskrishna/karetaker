@@ -33,10 +33,10 @@ class Karetaker_Alerts {
 	 * Sends a deduped ACT alert email for a newly recorded event.
 	 *
 	 * @since 0.1.0
-	 * @param int $id Event row ID.
+	 * @param int    $id Event row ID.
 	 * @param string $code Event code.
-	 * @param int $severity Severity constant.
-	 * @param array $context Event context.
+	 * @param int    $severity Severity constant.
+	 * @param array  $context Event context.
 	 * @return bool
 	 */
 	public static function maybe_send( $id, $code, $severity, $context ) {
@@ -44,7 +44,7 @@ class Karetaker_Alerts {
 			return false;
 		}
 
-		if ( (int) $severity !== Karetaker_Events::SEVERITY_ACT ) {
+		if ( Karetaker_Events::SEVERITY_ACT !== (int) $severity ) {
 			return false;
 		}
 
@@ -82,7 +82,7 @@ class Karetaker_Alerts {
 	 *
 	 * @since 0.1.0
 	 * @param string $code Event code.
-	 * @param array $context Event context.
+	 * @param array  $context Event context.
 	 * @return string
 	 */
 	public static function dedupe_key( $code, array $context ) {
@@ -95,7 +95,7 @@ class Karetaker_Alerts {
 	 *
 	 * @since 0.1.0
 	 * @param string $code Event code.
-	 * @param array $context Event context.
+	 * @param array  $context Event context.
 	 * @return string
 	 */
 	public static function subject_for( $code, array $context ) {
@@ -125,10 +125,10 @@ class Karetaker_Alerts {
 	 */
 	private static function guard_subject( $check ) {
 		$map = array(
-			'blog_public'          => 'Search engines were discouraged',
-			'mail_failed'          => 'WordPress could not send email',
-			'admin_email_invalid'  => 'The admin email address is invalid',
-			'no_administrator'     => 'No administrator remains on the site',
+			'blog_public'         => 'Search engines were discouraged',
+			'mail_failed'         => 'WordPress could not send email',
+			'admin_email_invalid' => 'The admin email address is invalid',
+			'no_administrator'    => 'No administrator remains on the site',
 		);
 		return isset( $map[ $check ] ) ? $map[ $check ] : 'A site setting needs attention';
 	}
@@ -138,8 +138,8 @@ class Karetaker_Alerts {
 	 *
 	 * @since 0.1.0
 	 * @param string $code Event code.
-	 * @param array $context Event context.
-	 * @param int $id Event row ID.
+	 * @param array  $context Event context.
+	 * @param int    $id Event row ID.
 	 * @return string
 	 */
 	public static function body_for( $code, array $context, $id ) {

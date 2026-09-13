@@ -67,9 +67,9 @@ class Karetaker_Guard {
 	 *
 	 * @since 0.1.0
 	 * @param string $check Check key from CHECKS.
-	 * @param bool $is_bad Whether the check is currently bad.
-	 * @param array $context Extra context stored on the event.
-	 * @param array &$state Scan state (updated by reference).
+	 * @param bool   $is_bad Whether the check is currently bad.
+	 * @param array  $context Extra context stored on the event.
+	 * @param array  &$state Scan state (updated by reference).
 	 * @return bool
 	 */
 	public static function evaluate( $check, $is_bad, array $context, array &$state ) {
@@ -146,12 +146,20 @@ class Karetaker_Guard {
 	 *
 	 * @since 0.1.0
 	 * @param mixed $old Previous value.
-	 * @param mixed $new New value.
+	 * @param mixed $new_value New value.
 	 * @return void
 	 */
-	public static function on_blog_public( $old, $new ) {
+	public static function on_blog_public( $old, $new_value ) {
 		$state = Karetaker_Scanner::state();
-		self::evaluate( 'blog_public', '0' === (string) $new, array( 'old' => (string) $old, 'new' => (string) $new ), $state );
+		self::evaluate(
+			'blog_public',
+			'0' === (string) $new_value,
+			array(
+				'old' => (string) $old,
+				'new' => (string) $new_value,
+			),
+			$state
+		);
 		Karetaker_Scanner::save_state( $state );
 	}
 
@@ -160,12 +168,13 @@ class Karetaker_Guard {
 	 *
 	 * @since 0.1.0
 	 * @param mixed $old Previous value.
-	 * @param mixed $new New value.
+	 * @param mixed $new_value New value.
 	 * @return void
 	 */
-	public static function on_admin_email_option( $old, $new ) {
+	public static function on_admin_email_option( $old, $new_value ) {
+		unset( $old );
 		$state = Karetaker_Scanner::state();
-		$bad   = '' === (string) $new || ! is_email( (string) $new );
+		$bad   = '' === (string) $new_value || ! is_email( (string) $new_value );
 		self::evaluate( 'admin_email_invalid', $bad, array(), $state );
 		Karetaker_Scanner::save_state( $state );
 	}
@@ -209,12 +218,13 @@ class Karetaker_Guard {
 	 * Re-checks administrators after set_user_role.
 	 *
 	 * @since 0.1.0
-	 * @param int $user_id User ID.
+	 * @param int    $user_id User ID.
 	 * @param string $role New role.
-	 * @param array $old_roles Previous roles.
+	 * @param array  $old_roles Previous roles.
 	 * @return void
 	 */
 	public static function on_user_capability_change( $user_id, $role, $old_roles ) {
+		unset( $user_id, $role, $old_roles );
 		self::maybe_check_administrators();
 	}
 
@@ -222,11 +232,12 @@ class Karetaker_Guard {
 	 * Re-checks administrators after add_user_role.
 	 *
 	 * @since 0.1.0
-	 * @param int $user_id User ID.
+	 * @param int    $user_id User ID.
 	 * @param string $role Role added.
 	 * @return void
 	 */
 	public static function on_user_capability_change_add( $user_id, $role ) {
+		unset( $user_id, $role );
 		self::maybe_check_administrators();
 	}
 
@@ -234,11 +245,12 @@ class Karetaker_Guard {
 	 * Re-checks administrators after remove_user_role.
 	 *
 	 * @since 0.1.0
-	 * @param int $user_id User ID.
+	 * @param int    $user_id User ID.
 	 * @param string $role Role removed.
 	 * @return void
 	 */
 	public static function on_user_capability_change_remove( $user_id, $role ) {
+		unset( $user_id, $role );
 		self::maybe_check_administrators();
 	}
 
@@ -246,12 +258,13 @@ class Karetaker_Guard {
 	 * Re-checks administrators after a user is deleted.
 	 *
 	 * @since 0.1.0
-	 * @param int $user_id Deleted user ID.
-	 * @param int|null $reassign Reassignment target.
+	 * @param int          $user_id Deleted user ID.
+	 * @param int|null     $reassign Reassignment target.
 	 * @param WP_User|null $user Deleted user object when available.
 	 * @return void
 	 */
 	public static function on_user_deleted( $user_id, $reassign, $user = null ) {
+		unset( $user_id, $reassign, $user );
 		self::maybe_check_administrators();
 	}
 }

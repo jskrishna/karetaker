@@ -18,12 +18,12 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/class-schema.php';
 Karetaker_Schema::uninstall();
 Karetaker_Settings::uninstall();
 
-foreach ( array( 'karetaker_scan', 'karetaker_digest' ) as $hook ) {
-	$timestamp = wp_next_scheduled( $hook );
+foreach ( array( 'karetaker_scan', 'karetaker_digest' ) as $karetaker_hook ) {
+	$karetaker_timestamp = wp_next_scheduled( $karetaker_hook );
 
-	while ( $timestamp ) {
-		wp_unschedule_event( $timestamp, $hook );
-		$timestamp = wp_next_scheduled( $hook );
+	while ( $karetaker_timestamp ) {
+		wp_unschedule_event( $karetaker_timestamp, $karetaker_hook );
+		$karetaker_timestamp = wp_next_scheduled( $karetaker_hook );
 	}
 }
 

@@ -26,6 +26,11 @@ class Karetaker_Events {
 	const CONTEXT_MAX_KEYS   = 20;
 	const CONTEXT_MAX_LENGTH = 500;
 
+	/**
+	 * Whether Events::init has run.
+	 *
+	 * @var bool
+	 */
 	private static $booted = false;
 
 	/**
@@ -50,26 +55,26 @@ class Karetaker_Events {
 	 */
 	public static function codes() {
 		return array(
-			'admin_user_added'      => self::SEVERITY_ACT,
-			'role_escalated'        => self::SEVERITY_ACT,
-			'registration_opened'   => self::SEVERITY_ACT,
-			'muplugin_changed'      => self::SEVERITY_ACT,
-			'uploads_php_found'     => self::SEVERITY_ACT,
-			'file_hash_mismatch'    => self::SEVERITY_ACT,
-			'guard_tripped'         => self::SEVERITY_ACT,
-			'orphan_cron_found'     => self::SEVERITY_ATTENTION,
-			'option_changed'        => self::SEVERITY_ATTENTION,
-			'file_editor_used'      => self::SEVERITY_ATTENTION,
-			'admin_email_changed'   => self::SEVERITY_ATTENTION,
-			'plugin_activated'      => self::SEVERITY_LOG,
-			'plugin_deactivated'    => self::SEVERITY_LOG,
-			'theme_switched'        => self::SEVERITY_LOG,
-			'user_login'            => self::SEVERITY_LOG,
-			'login_failure_burst'   => self::SEVERITY_ATTENTION,
-			'user_created'          => self::SEVERITY_LOG,
-			'user_deleted'          => self::SEVERITY_LOG,
-			'scan_ran'              => self::SEVERITY_LOG,
-			'setting_changed'       => self::SEVERITY_LOG,
+			'admin_user_added'    => self::SEVERITY_ACT,
+			'role_escalated'      => self::SEVERITY_ACT,
+			'registration_opened' => self::SEVERITY_ACT,
+			'muplugin_changed'    => self::SEVERITY_ACT,
+			'uploads_php_found'   => self::SEVERITY_ACT,
+			'file_hash_mismatch'  => self::SEVERITY_ACT,
+			'guard_tripped'       => self::SEVERITY_ACT,
+			'orphan_cron_found'   => self::SEVERITY_ATTENTION,
+			'option_changed'      => self::SEVERITY_ATTENTION,
+			'file_editor_used'    => self::SEVERITY_ATTENTION,
+			'admin_email_changed' => self::SEVERITY_ATTENTION,
+			'plugin_activated'    => self::SEVERITY_LOG,
+			'plugin_deactivated'  => self::SEVERITY_LOG,
+			'theme_switched'      => self::SEVERITY_LOG,
+			'user_login'          => self::SEVERITY_LOG,
+			'login_failure_burst' => self::SEVERITY_ATTENTION,
+			'user_created'        => self::SEVERITY_LOG,
+			'user_deleted'        => self::SEVERITY_LOG,
+			'scan_ran'            => self::SEVERITY_LOG,
+			'setting_changed'     => self::SEVERITY_LOG,
 		);
 	}
 
