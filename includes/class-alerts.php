@@ -102,16 +102,16 @@ class Karetaker_Alerts {
 		$check = isset( $context['check'] ) ? (string) $context['check'] : '';
 
 		$map = array(
-			'admin_user_added'    => 'A new administrator account appeared',
-			'role_escalated'      => 'A user was made administrator',
-			'registration_opened' => 'Anyone can register on your site',
-			'muplugin_changed'    => 'A must-use plugin file changed',
-			'uploads_php_found'   => 'Executable PHP appeared under uploads',
-			'file_hash_mismatch'  => 'A plugin or theme no longer matches wordpress.org',
+			'admin_user_added'    => __( 'A new administrator account appeared', 'karetaker' ),
+			'role_escalated'      => __( 'A user was made administrator', 'karetaker' ),
+			'registration_opened' => __( 'Anyone can register on your site', 'karetaker' ),
+			'muplugin_changed'    => __( 'A must-use plugin file changed', 'karetaker' ),
+			'uploads_php_found'   => __( 'Executable PHP appeared under uploads', 'karetaker' ),
+			'file_hash_mismatch'  => __( 'A plugin or theme no longer matches wordpress.org', 'karetaker' ),
 			'guard_tripped'       => self::guard_subject( $check ),
 		);
 
-		$verdict = isset( $map[ $code ] ) ? $map[ $code ] : 'Something needs your attention';
+		$verdict = isset( $map[ $code ] ) ? $map[ $code ] : __( 'Something needs your attention', 'karetaker' );
 
 		return '[Karetaker] ' . $verdict;
 	}
@@ -125,12 +125,12 @@ class Karetaker_Alerts {
 	 */
 	private static function guard_subject( $check ) {
 		$map = array(
-			'blog_public'         => 'Search engines were discouraged',
-			'mail_failed'         => 'WordPress could not send email',
-			'admin_email_invalid' => 'The admin email address is invalid',
-			'no_administrator'    => 'No administrator remains on the site',
+			'blog_public'         => __( 'Search engines were discouraged', 'karetaker' ),
+			'mail_failed'         => __( 'WordPress could not send email', 'karetaker' ),
+			'admin_email_invalid' => __( 'The admin email address is invalid', 'karetaker' ),
+			'no_administrator'    => __( 'No administrator remains on the site', 'karetaker' ),
 		);
-		return isset( $map[ $check ] ) ? $map[ $check ] : 'A site setting needs attention';
+		return isset( $map[ $check ] ) ? $map[ $check ] : __( 'A site setting needs attention', 'karetaker' );
 	}
 
 	/**
@@ -150,15 +150,24 @@ class Karetaker_Alerts {
 		$lines   = array();
 		$lines[] = self::subject_for( $code, $context );
 		$lines[] = '';
-		$lines[] = 'Site: ' . $home;
-		$lines[] = 'Event: ' . $code . ' (#' . (int) $id . ')';
+		$lines[] = sprintf(
+			/* translators: %s: site home URL */
+			__( 'Site: %s', 'karetaker' ),
+			$home
+		);
+		$lines[] = sprintf(
+			/* translators: 1: event code, 2: event ID */
+			__( 'Event: %1$s (#%2$d)', 'karetaker' ),
+			$code,
+			(int) $id
+		);
 		if ( ! empty( $guidance['summary'] ) ) {
 			$lines[] = '';
 			$lines[] = $guidance['summary'];
 		}
 		if ( ! empty( $guidance['steps'] ) ) {
 			$lines[] = '';
-			$lines[] = 'What you should do:';
+			$lines[] = __( 'What you should do:', 'karetaker' );
 			$step_n  = 1;
 			foreach ( $guidance['steps'] as $step ) {
 				$lines[] = $step_n . '. ' . $step;
@@ -167,17 +176,17 @@ class Karetaker_Alerts {
 		}
 		if ( ! empty( $guidance['link'] ) ) {
 			$lines[] = '';
-			$label   = ! empty( $guidance['link_label'] ) ? $guidance['link_label'] : 'Open related screen';
+			$label   = ! empty( $guidance['link_label'] ) ? $guidance['link_label'] : __( 'Open related screen', 'karetaker' );
 			$lines[] = $label . ': ' . $guidance['link'];
 		}
 		if ( $context ) {
 			$lines[] = '';
-			$lines[] = 'Technical details: ' . wp_json_encode( $context );
+			$lines[] = __( 'Technical details:', 'karetaker' ) . ' ' . wp_json_encode( $context );
 		}
 		$lines[] = '';
-		$lines[] = 'Open Karetaker Activity: ' . $tools;
+		$lines[] = __( 'Open Karetaker Activity:', 'karetaker' ) . ' ' . $tools;
 		$lines[] = '';
-		$lines[] = 'To stop these emails, open Karetaker → Settings and turn off Enable alerts.';
+		$lines[] = __( 'To stop these emails, open Karetaker → Settings and turn off Enable alerts.', 'karetaker' );
 
 		return implode( "\n", $lines );
 	}

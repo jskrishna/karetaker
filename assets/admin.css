@@ -10,6 +10,7 @@
 	--kt-line-strong: #c3c4c7;
 	--kt-ok: #00a32a;
 	--kt-ok-soft: #edfaef;
+	--kt-warn-soft: #fcf9e8;
 	--kt-danger: #d63638;
 	--kt-danger-soft: #fcf0f1;
 	--kt-watch-soft: #f0f6fc;
@@ -207,6 +208,22 @@
 	background: var(--kt-ok-soft);
 	border-color: #b8e6bf;
 	color: #1e4620;
+}
+
+.karetaker-app .kt-alert--warning {
+	background: var(--kt-warn-soft);
+	border-color: #e8d4a8;
+	color: #6b4e12;
+}
+
+.karetaker-app .kt-alert__code {
+	margin: 8px 0 0;
+}
+
+.karetaker-app .kt-alert__code code {
+	display: inline-block;
+	padding: 4px 8px;
+	word-break: break-all;
 }
 
 .karetaker-app .kt-toolbar {

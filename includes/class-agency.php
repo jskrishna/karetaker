@@ -48,7 +48,7 @@ class Karetaker_Agency {
 	}
 
 	/**
-	 * Allows the status route when the request Bearer or token matches settings.
+	 * Allows the status route when the request Bearer token matches settings.
 	 *
 	 * @since 0.1.0
 	 * @return bool
@@ -68,7 +68,9 @@ class Karetaker_Agency {
 	}
 
 	/**
-	 * Extracts the agency token from Authorization or ?token=.
+	 * Extracts the agency token from the Authorization Bearer header.
+	 *
+	 * Query-string tokens are not accepted (avoid leaking secrets in logs/referrers).
 	 *
 	 * @since 0.1.0
 	 * @return string
@@ -77,10 +79,6 @@ class Karetaker_Agency {
 		$header = self::authorization_header();
 		if ( '' !== $header && preg_match( '/^Bearer\s+(\S+)$/i', $header, $matches ) ) {
 			return self::normalize_token( $matches[1] );
-		}
-
-		if ( isset( $_GET['token'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			return self::normalize_token( wp_unslash( $_GET['token'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.NonceVerification.Recommended
 		}
 
 		return '';
@@ -94,11 +92,11 @@ class Karetaker_Agency {
 	 */
 	private static function authorization_header() {
 		if ( isset( $_SERVER['HTTP_AUTHORIZATION'] ) ) {
-			return trim( (string) wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			return sanitize_text_field( wp_unslash( $_SERVER['HTTP_AUTHORIZATION'] ) );
 		}
 
 		if ( isset( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ) {
-			return trim( (string) wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			return sanitize_text_field( wp_unslash( $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ) );
 		}
 
 		if ( function_exists( 'getallheaders' ) ) {
@@ -106,7 +104,7 @@ class Karetaker_Agency {
 			if ( is_array( $headers ) ) {
 				foreach ( $headers as $name => $value ) {
 					if ( 0 === strcasecmp( (string) $name, 'Authorization' ) ) {
-						return trim( (string) $value );
+						return sanitize_text_field( (string) $value );
 					}
 				}
 			}

@@ -4,7 +4,7 @@ Tags: security, monitoring, hardening, integrity, alerts
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 0.1.0
+Stable tag: 0.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -51,7 +51,7 @@ Define `KARETAKER_DISABLE` as true in `wp-config.php`, or create `wp-content/kar
 
 = What does the agency token do? =
 
-It unlocks a read-only JSON status endpoint for monitoring scripts. Empty token = off. Regenerating invalidates the old token. It cannot change settings or run scans remotely.
+It unlocks a read-only JSON status endpoint for monitoring scripts. Empty token = off. Regenerating invalidates the old token. Authenticate with `Authorization: Bearer <token>` only (query-string tokens are not accepted). It cannot change settings or run scans remotely.
 
 = Does uninstall leave data behind? =
 
@@ -69,6 +69,13 @@ By default, only integrity checks contact WordPress.org to fetch published core/
 4. Settings — alert email, trusted proxies, ACT webhook, and agency token controls.
 
 == Changelog ==
+
+= 0.1.1 =
+* Security: verify nonce and capabilities before recording file-editor AJAX events.
+* Admin notices stay inside the Karetaker screen only (Guideline 11).
+* Agency status auth is Bearer-header only; webhook URLs limited to http/https.
+* i18n for alert emails and Harden live-status labels.
+* Manual scans attribute the acting admin (cron still records as system/guest).
 
 = 0.1.0 =
 * Initial release: Watch, Guard, Tell, Harden, and optional agency status channel.

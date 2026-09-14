@@ -54,6 +54,11 @@ class Karetaker_Webhook {
 			return false;
 		}
 
+		$scheme = strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) );
+		if ( ! in_array( $scheme, array( 'http', 'https' ), true ) ) {
+			return false;
+		}
+
 		$secret = (string) Karetaker_Settings::get( 'webhook_secret' );
 		$body   = wp_json_encode(
 			array(

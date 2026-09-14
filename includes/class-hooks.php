@@ -381,11 +381,38 @@ class Karetaker_Hooks {
 	/**
 	 * Records file_editor_used when the theme/plugin file editor AJAX runs.
 	 *
+	 * Observes core's `edit-theme-plugin-file` action; verifies the same nonce
+	 * and capabilities WordPress uses before writing an event.
+	 *
 	 * @since 0.1.0
 	 * @return void
 	 */
 	public static function on_file_editor() {
-		$file = isset( $_POST['file'] ) ? sanitize_text_field( wp_unslash( $_POST['file'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		if ( ! isset( $_POST['nonce'] ) || ! isset( $_POST['file'] ) ) {
+			return;
+		}
+
+		$nonce  = sanitize_text_field( wp_unslash( $_POST['nonce'] ) );
+		$file   = sanitize_text_field( wp_unslash( $_POST['file'] ) );
+		$plugin = isset( $_POST['plugin'] ) ? sanitize_text_field( wp_unslash( $_POST['plugin'] ) ) : '';
+		$theme  = isset( $_POST['theme'] ) ? sanitize_text_field( wp_unslash( $_POST['theme'] ) ) : '';
+		$valid  = false;
+
+		if ( '' !== $plugin ) {
+			if ( ! current_user_can( 'edit_plugins' ) ) {
+				return;
+			}
+			$valid = (bool) wp_verify_nonce( $nonce, 'edit-plugin_' . $file );
+		} elseif ( '' !== $theme ) {
+			if ( ! current_user_can( 'edit_themes' ) ) {
+				return;
+			}
+			$valid = (bool) wp_verify_nonce( $nonce, 'edit-theme_' . $theme . '_' . $file );
+		}
+
+		if ( ! $valid ) {
+			return;
+		}
 
 		Karetaker_Events::record( 'file_editor_used', array( 'file' => $file ) );
 	}

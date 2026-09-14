@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 STAGE_ROOT="$(mktemp -d)"
 STAGE="$STAGE_ROOT/karetaker"
-OUT="${1:-$ROOT/dist/karetaker-0.1.0.zip}"
+OUT="${1:-$ROOT/dist/karetaker-0.1.1.zip}"
 mkdir -p "$(dirname "$OUT")" "$STAGE"
 
 rsync -a \

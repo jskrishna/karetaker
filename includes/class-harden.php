@@ -237,12 +237,13 @@ class Karetaker_Harden {
 			return;
 		}
 
-		// Front-end author enum probe — no form nonce applies.
-		if ( ! isset( $_GET['author'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Public front-end probe; no privileged action.
+		if ( ! isset( $_GET['author'] ) ) {
 			return;
 		}
 
-		$author = sanitize_text_field( wp_unslash( $_GET['author'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$author = sanitize_text_field( wp_unslash( $_GET['author'] ) );
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		if ( '' === $author || ! ctype_digit( $author ) ) {
 			return;
@@ -354,7 +355,7 @@ class Karetaker_Harden {
 		$key = sanitize_key( $key );
 
 		if ( ! in_array( $key, self::KEYS, true ) ) {
-			return 'Unknown';
+			return __( 'Unknown', 'karetaker' );
 		}
 
 		$on = self::is_on( $key );
@@ -362,66 +363,66 @@ class Karetaker_Harden {
 		switch ( $key ) {
 			case 'headers':
 				if ( ! $on ) {
-					return 'Off';
+					return __( 'Off', 'karetaker' );
 				}
 
-				return self::$booted ? 'Enabled for responses' : 'Off';
+				return self::$booted ? __( 'Enabled for responses', 'karetaker' ) : __( 'Off', 'karetaker' );
 
 			case 'xmlrpc':
 				if ( ! $on ) {
-					return 'Off';
+					return __( 'Off', 'karetaker' );
 				}
 
 				// Probe the core filter; not a plugin-owned hook name.
-				return apply_filters( 'xmlrpc_enabled', true ) ? 'Enabled' : 'Disabled'; // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
+				return apply_filters( 'xmlrpc_enabled', true ) ? __( 'Enabled', 'karetaker' ) : __( 'Disabled', 'karetaker' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound
 
 			case 'file_editor':
 				if ( defined( 'DISALLOW_FILE_EDIT' ) && DISALLOW_FILE_EDIT ) {
-					return $on ? 'Blocked' : 'Blocked by host/wp-config';
+					return $on ? __( 'Blocked', 'karetaker' ) : __( 'Blocked by host/wp-config', 'karetaker' );
 				}
 
 				if ( ! $on ) {
-					return 'Off';
+					return __( 'Off', 'karetaker' );
 				}
 
-				return 'Editor allowed';
+				return __( 'Editor allowed', 'karetaker' );
 
 			case 'user_enum':
 				if ( ! $on ) {
-					return 'Off';
+					return __( 'Off', 'karetaker' );
 				}
 
 				return has_filter( 'rest_endpoints', array( __CLASS__, 'filter_rest_endpoints' ) )
-					? 'REST users hidden for guests'
-					: 'Off';
+					? __( 'REST users hidden for guests', 'karetaker' )
+					: __( 'Off', 'karetaker' );
 
 			case 'version':
 				if ( ! $on ) {
-					return 'Off';
+					return __( 'Off', 'karetaker' );
 				}
 
 				return has_filter( 'the_generator', array( __CLASS__, 'empty_generator' ) )
-					? 'Generator stripped'
-					: 'Off';
+					? __( 'Generator stripped', 'karetaker' )
+					: __( 'Off', 'karetaker' );
 
 			case 'registration':
 				if ( ! $on ) {
-					return 'Off';
+					return __( 'Off', 'karetaker' );
 				}
 
-				return (string) get_option( 'users_can_register' ) === '0' ? 'Closed' : 'Open';
+				return (string) get_option( 'users_can_register' ) === '0' ? __( 'Closed', 'karetaker' ) : __( 'Open', 'karetaker' );
 
 			case 'app_passwords':
 				if ( ! $on ) {
-					return 'Off';
+					return __( 'Off', 'karetaker' );
 				}
 
 				return has_filter( 'wp_is_application_passwords_available_for_user', array( __CLASS__, 'filter_app_passwords_user' ) )
-					? 'Limited to admins'
-					: 'Off';
+					? __( 'Limited to admins', 'karetaker' )
+					: __( 'Off', 'karetaker' );
 
 			default:
-				return 'Unknown';
+				return __( 'Unknown', 'karetaker' );
 		}
 	}
 }

@@ -49,6 +49,8 @@ class Karetaker_List_Table extends WP_List_Table {
 	/**
 	 * Parses Activity tab filter arguments from the request.
 	 *
+	 * Read-only display filters (no state change). Callers must already require manage_options.
+	 *
 	 * @since 0.1.0
 	 * @return array<string, mixed>
 	 */
@@ -60,25 +62,32 @@ class Karetaker_List_Table extends WP_List_Table {
 			'search' => '',
 		);
 
-		if ( isset( $_GET['kt_code'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$args['code'] = sanitize_key( wp_unslash( $_GET['kt_code'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return $args;
 		}
 
-		if ( isset( $_GET['kt_since'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$raw_since     = sanitize_text_field( wp_unslash( $_GET['kt_since'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- GET filters only change the Activity list query; page requires manage_options.
+		if ( isset( $_GET['kt_code'] ) ) {
+			$args['code'] = sanitize_key( wp_unslash( $_GET['kt_code'] ) );
+		}
+
+		if ( isset( $_GET['kt_since'] ) ) {
+			$raw_since     = sanitize_text_field( wp_unslash( $_GET['kt_since'] ) );
 			$args['since'] = self::sanitize_date_input( $raw_since );
 		}
 
-		if ( isset( $_GET['kt_until'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$raw_until     = sanitize_text_field( wp_unslash( $_GET['kt_until'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['kt_until'] ) ) {
+			$raw_until     = sanitize_text_field( wp_unslash( $_GET['kt_until'] ) );
 			$args['until'] = self::sanitize_date_input( $raw_until );
 		}
 
-		if ( isset( $_GET['kt_s'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$args['search'] = sanitize_text_field( wp_unslash( $_GET['kt_s'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['kt_s'] ) ) {
+			$args['search'] = sanitize_text_field( wp_unslash( $_GET['kt_s'] ) );
 		}
 
-		$band = isset( $_GET['kt_sev'] ) ? sanitize_key( wp_unslash( $_GET['kt_sev'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$band = isset( $_GET['kt_sev'] ) ? sanitize_key( wp_unslash( $_GET['kt_sev'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
 		if ( 'log' === $band ) {
 			$args['severity'] = Karetaker_Events::SEVERITY_LOG;
 		} elseif ( 'watch' === $band ) {

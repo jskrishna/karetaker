@@ -38,8 +38,6 @@ class Karetaker_Admin {
 		add_action( 'admin_post_karetaker_agency_generate', array( __CLASS__, 'handle_agency_generate' ) );
 		add_action( 'admin_post_karetaker_agency_regenerate', array( __CLASS__, 'handle_agency_regenerate' ) );
 		add_action( 'admin_post_karetaker_agency_clear', array( __CLASS__, 'handle_agency_clear' ) );
-		add_action( 'admin_notices', array( __CLASS__, 'maybe_settings_notice' ) );
-		add_action( 'admin_notices', array( __CLASS__, 'maybe_agency_token_notice' ) );
 	}
 
 	/**
@@ -123,12 +121,14 @@ class Karetaker_Admin {
 			return;
 		}
 
-		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Soft redirect of legacy bookmark; capability already checked.
+		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
 		if ( self::PAGE_SLUG !== $page ) {
 			return;
 		}
 
-		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		wp_safe_redirect( self::admin_page_url( $tab ) );
 		exit;
 	}
@@ -140,8 +140,9 @@ class Karetaker_Admin {
 	 * @return string
 	 */
 	public static function current_tab() {
-		// Tab switcher is a GET link; capability checked in render_page.
-		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'overview'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Tab switcher is a GET link; capability checked in render_page.
+		$tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'overview';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		if ( ! in_array( $tab, self::TABS, true ) ) {
 			return 'overview';
@@ -276,17 +277,48 @@ class Karetaker_Admin {
 	}
 
 	/**
-	 * Inline success and scan notices inside the app shell.
+	 * Inline notices inside the app shell only (never site-wide admin_notices).
 	 *
 	 * @since 0.1.0
 	 * @return void
 	 */
 	private static function maybe_inline_notices() {
-		if ( ! empty( $_GET['scan_done'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Flash flags from our own authenticated redirects.
+		$scan_done      = ! empty( $_GET['scan_done'] );
+		$saved_settings = ! empty( $_GET['karetaker_saved'] );
+		$saved_harden   = ! empty( $_GET['updated'] ) && 'harden' === self::current_tab();
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		if ( $scan_done ) {
 			?>
 			<div class="kt-alert kt-alert--success">
 				<span class="dashicons dashicons-yes-alt" aria-hidden="true"></span>
 				<span><?php echo esc_html__( 'Scan completed. Results are updated below.', 'karetaker' ); ?></span>
+			</div>
+			<?php
+		}
+
+		if ( $saved_settings || $saved_harden ) {
+			?>
+			<div class="kt-alert kt-alert--success">
+				<span class="dashicons dashicons-yes-alt" aria-hidden="true"></span>
+				<span><?php echo esc_html__( 'Settings saved.', 'karetaker' ); ?></span>
+			</div>
+			<?php
+		}
+
+		$key   = self::agency_token_once_key();
+		$token = get_transient( $key );
+		if ( false !== $token && '' !== (string) $token ) {
+			delete_transient( $key );
+			?>
+			<div class="kt-alert kt-alert--warning">
+				<span class="dashicons dashicons-warning" aria-hidden="true"></span>
+				<div>
+					<strong><?php echo esc_html__( 'Copy your agency token now.', 'karetaker' ); ?></strong>
+					<?php echo esc_html__( 'It will not be shown again.', 'karetaker' ); ?>
+					<p class="kt-alert__code"><code><?php echo esc_html( (string) $token ); ?></code></p>
+				</div>
 			</div>
 			<?php
 		}
@@ -359,8 +391,10 @@ class Karetaker_Admin {
 		$table = new Karetaker_List_Table();
 		$table->prepare_items();
 
-		$filters       = Karetaker_List_Table::filter_args_from_request();
-		$filter_sev    = isset( $_GET['kt_sev'] ) ? sanitize_key( wp_unslash( $_GET['kt_sev'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$filters = Karetaker_List_Table::filter_args_from_request();
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Display-only severity band for the filter UI.
+		$filter_sev = isset( $_GET['kt_sev'] ) ? sanitize_key( wp_unslash( $_GET['kt_sev'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 		$filter_code   = isset( $filters['code'] ) ? (string) $filters['code'] : '';
 		$filter_since  = ! empty( $filters['since'] ) ? substr( (string) $filters['since'], 0, 10 ) : '';
 		$filter_until  = ! empty( $filters['until'] ) ? substr( (string) $filters['until'], 0, 10 ) : '';
@@ -798,6 +832,14 @@ class Karetaker_Admin {
 		$webhook_url     = isset( $_POST['webhook_url'] ) ? esc_url_raw( wp_unslash( $_POST['webhook_url'] ) ) : '';
 		$webhook_secret  = isset( $_POST['webhook_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['webhook_secret'] ) ) : '';
 
+		if ( '' !== $webhook_url ) {
+			$scheme = strtolower( (string) wp_parse_url( $webhook_url, PHP_URL_SCHEME ) );
+			if ( ! in_array( $scheme, array( 'http', 'https' ), true ) || ! wp_http_validate_url( $webhook_url ) ) {
+				$webhook_url     = '';
+				$webhook_enabled = false;
+			}
+		}
+
 		Karetaker_Settings::update(
 			array(
 				'alert_email'     => $email,
@@ -972,68 +1014,6 @@ class Karetaker_Admin {
 	 */
 	private static function agency_token_once_key() {
 		return 'karetaker_agency_token_once_' . get_current_user_id();
-	}
-
-	/**
-	 * Shows the one-time full agency token after generate or regenerate.
-	 *
-	 * @since 0.1.0
-	 * @return void
-	 */
-	public static function maybe_agency_token_notice() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( self::PAGE_SLUG !== $page ) {
-			return;
-		}
-
-		$key   = self::agency_token_once_key();
-		$token = get_transient( $key );
-		if ( false === $token || '' === (string) $token ) {
-			return;
-		}
-
-		delete_transient( $key );
-		?>
-		<div class="notice notice-warning">
-			<p>
-				<strong><?php echo esc_html__( 'Copy your agency token now.', 'karetaker' ); ?></strong>
-				<?php echo esc_html__( 'It will not be shown again.', 'karetaker' ); ?>
-			</p>
-			<p><code><?php echo esc_html( (string) $token ); ?></code></p>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Shows a success notice after settings or harden save redirects.
-	 *
-	 * @since 0.1.0
-	 * @return void
-	 */
-	public static function maybe_settings_notice() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			return;
-		}
-
-		$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( self::PAGE_SLUG !== $page ) {
-			return;
-		}
-
-		$saved_settings = ! empty( $_GET['karetaker_saved'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$saved_harden   = ! empty( $_GET['updated'] ) && 'harden' === self::current_tab(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( ! $saved_settings && ! $saved_harden ) {
-			return;
-		}
-		?>
-		<div class="notice notice-success is-dismissible">
-			<p><?php echo esc_html__( 'Settings saved.', 'karetaker' ); ?></p>
-		</div>
-		<?php
 	}
 
 	/**

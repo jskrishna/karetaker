@@ -143,8 +143,7 @@ class Karetaker_Scanner {
 			array(
 				'seconds' => round( microtime( true ) - self::$started_at, 2 ),
 				'results' => wp_json_encode( $results ),
-			),
-			0
+			)
 		);
 
 		return $results;

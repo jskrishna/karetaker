@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Karetaker
  * Description: Watches a WordPress site for the changes that indicate compromise, and tells the owner only when something needs them.
- * Version:     0.1.0
+ * Version:     0.1.1
  * Author:      Team Krikir
  * License:     GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'KARETAKER_VERSION', '0.1.0' );
+define( 'KARETAKER_VERSION', '0.1.1' );
 define( 'KARETAKER_FILE', __FILE__ );
 define( 'KARETAKER_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KARETAKER_SLUG', 'karetaker' );
