@@ -115,7 +115,7 @@ class Karetaker_Harden {
 
 		if ( self::is_on( 'file_editor' ) ) {
 			if ( ! defined( 'DISALLOW_FILE_EDIT' ) ) {
-				// WordPress core constant — not a plugin-owned symbol.
+				// WordPress core constant, not a plugin-owned symbol.
 				define( 'DISALLOW_FILE_EDIT', true ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound
 			}
 		}
@@ -196,6 +196,8 @@ class Karetaker_Harden {
 	private static function apply_user_enum() {
 		add_filter( 'rest_endpoints', array( __CLASS__, 'filter_rest_endpoints' ) );
 		add_action( 'parse_request', array( __CLASS__, 'block_author_enum' ) );
+		add_action( 'template_redirect', array( __CLASS__, 'block_author_archives' ) );
+		add_filter( 'wp_sitemaps_add_provider', array( __CLASS__, 'filter_sitemaps_users' ), 10, 2 );
 	}
 
 	/**
@@ -251,6 +253,37 @@ class Karetaker_Harden {
 
 		wp_safe_redirect( home_url( '/' ), 301 );
 		exit;
+	}
+
+	/**
+	 * Redirects author archive URLs (/author/slug/) away from the public site.
+	 *
+	 * @since 0.1.3
+	 * @return void
+	 */
+	public static function block_author_archives() {
+		if ( is_admin() || ! is_author() ) {
+			return;
+		}
+
+		wp_safe_redirect( home_url( '/' ), 301 );
+		exit;
+	}
+
+	/**
+	 * Removes the users sitemap provider (e.g. /wp-sitemap-users-1.xml).
+	 *
+	 * @since 0.1.3
+	 * @param WP_Sitemaps_Provider|false $provider Provider instance or false.
+	 * @param string                     $name Provider name.
+	 * @return WP_Sitemaps_Provider|false
+	 */
+	public static function filter_sitemaps_users( $provider, $name ) {
+		if ( 'users' === $name ) {
+			return false;
+		}
+
+		return $provider;
 	}
 
 	/**
@@ -393,7 +426,7 @@ class Karetaker_Harden {
 				}
 
 				return has_filter( 'rest_endpoints', array( __CLASS__, 'filter_rest_endpoints' ) )
-					? __( 'REST users hidden for guests', 'karetaker' )
+					? __( 'REST, author URLs, and users sitemap blocked', 'karetaker' )
 					: __( 'Off', 'karetaker' );
 
 			case 'version':

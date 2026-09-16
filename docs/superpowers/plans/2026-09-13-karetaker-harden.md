@@ -47,13 +47,13 @@
 
 **Interfaces:**
 - Produces:
-  - `Karetaker_Harden::KEYS` — list of seven keys
+  - `Karetaker_Harden::KEYS`: list of seven keys
   - `Karetaker_Harden::defaults(): array`
-  - `Karetaker_Harden::desired(): array` — merged bools
+  - `Karetaker_Harden::desired(): array`: merged bools
   - `Karetaker_Harden::is_on( string $key ): bool`
   - `Karetaker_Harden::init(): void`
   - `Karetaker_Harden::probe( string $key ): string`
-  - `Karetaker_Settings::harden(): array` — convenience wrapper optional
+  - `Karetaker_Settings::harden(): array`: convenience wrapper optional
 
 - [ ] **Step 1: Extend settings defaults**
 
@@ -83,7 +83,7 @@ public static function harden() {
 }
 ```
 
-(Require harden class before calling, or inline the same defaults array in Settings to avoid load-order issues — **prefer** duplicating the seven false defaults in Settings::defaults only, and Harden::defaults() returns the same structure; `harden()` merges via `Karetaker_Harden::defaults()` after Harden is loaded.)
+(Require harden class before calling, or inline the same defaults array in Settings to avoid load-order issues: **prefer** duplicating the seven false defaults in Settings::defaults only, and Harden::defaults() returns the same structure; `harden()` merges via `Karetaker_Harden::defaults()` after Harden is loaded.)
 
 - [ ] **Step 2: Create `includes/class-harden.php` with KEYS, defaults, desired, is_on, init skeleton**
 
@@ -200,15 +200,15 @@ add_action( 'admin_post_karetaker_save_harden', array( __CLASS__, 'handle_save_h
 Form `method=post` `action=admin-post.php`:
 - hidden `action=karetaker_save_harden`
 - `wp_nonce_field( 'karetaker_save_harden' )`
-- table: foreach KEYS — checkbox `harden[key]`, help text, Live now = `esc_html( Karetaker_Harden::probe( $key ) )`
-- If `karetaker_is_disabled()` show error notice (also note: if disabled, Harden class never inits — probe may need to work from desired settings alone; **if kill switch on, boot returns before Harden::init**, so require Harden class always for probes OR show “plugin disabled” only). Prefer: always `require_once class-harden.php` at top level next to other requires (like Guard), call `init()` only inside boot when not disabled. Then admin can still read desired + explain inactive.
+- table: foreach KEYS: checkbox `harden[key]`, help text, Live now = `esc_html( Karetaker_Harden::probe( $key ) )`
+- If `karetaker_is_disabled()` show error notice (also note: if disabled, Harden class never inits: probe may need to work from desired settings alone; **if kill switch on, boot returns before Harden::init**, so require Harden class always for probes OR show “plugin disabled” only). Prefer: always `require_once class-harden.php` at top level next to other requires (like Guard), call `init()` only inside boot when not disabled. Then admin can still read desired + explain inactive.
 
 **Load-order fix (do this in Task 1 if not already):** `require_once class-harden.php` with other requires at file scope; `Karetaker_Harden::init()` only inside `karetaker_boot()` when not disabled.
 
 - [ ] **Step 4: handle_save_harden()**
 
 ```php
-if ( ! current_user_can( 'manage_options' ) ) { wp_die( ... ); }
+if ( ! current_user_can( 'manage_options' ) ) { wp_die( .. ); }
 check_admin_referer( 'karetaker_save_harden' );
 $posted = isset( $_POST['harden'] ) && is_array( $_POST['harden'] ) ? wp_unslash( $_POST['harden'] ) : array();
 $next = Karetaker_Harden::defaults();
@@ -295,7 +295,7 @@ With `wp-content/karetaker-disable` present, harden filters must not register (b
 
 Two execution options:
 
-1. **Subagent-Driven (recommended)** — fresh subagent per task  
-2. **Inline Execution** — this session with checkpoints  
+1. **Subagent-Driven (recommended)**: fresh subagent per task  
+2. **Inline Execution**: this session with checkpoints  
 
 Which approach?

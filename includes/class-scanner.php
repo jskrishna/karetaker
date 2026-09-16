@@ -22,7 +22,8 @@ class Karetaker_Scanner {
 
 	const DEFAULT_BUDGET   = 15;
 	const UPLOADS_PER_RUN  = 20000;
-	const EXECUTABLE_REGEX = '/\.(php|php\d|phtml|phps|phar|pht|phtm|cgi|pl|py|sh|shtml)$/i';
+	const EXECUTABLE_REGEX = '/\.(php|php\d+|phtml|phps|phar|pht|phtm|cgi|pl|py|sh|shtml)$/i';
+	const UPLOADS_DOTFILES = array( '.htaccess', '.user.ini' );
 
 	/**
 	 * Microtime when the current run started.
@@ -136,6 +137,23 @@ class Karetaker_Scanner {
 		$state['last_run']     = current_time( 'mysql', true );
 		$state['last_results'] = $results;
 
+		// Re-merge Guard flags written by concurrent requests during this long run.
+		$latest = self::state();
+		if ( isset( $latest['guard'] ) && is_array( $latest['guard'] ) ) {
+			if ( ! isset( $state['guard'] ) || ! is_array( $state['guard'] ) ) {
+				$state['guard'] = array();
+			}
+			foreach ( $latest['guard'] as $check => $entry ) {
+				if ( ! is_array( $entry ) ) {
+					continue;
+				}
+				// Prefer live mail_failed (and any check we did not evaluate this run).
+				if ( 'mail_failed' === $check || ! isset( $state['guard'][ $check ] ) ) {
+					$state['guard'][ $check ] = $entry;
+				}
+			}
+		}
+
 		self::save_state( $state );
 
 		Karetaker_Events::record(
@@ -235,6 +253,10 @@ class Karetaker_Scanner {
 	/**
 	 * Walks uploads for executable extensions in budgeted chunks.
 	 *
+	 * Accumulates findings across chunks for one full cycle, then replaces the
+	 * baseline so deleted files do not stick forever. Resume uses relative path
+	 * order rather than a fragile file index.
+	 *
 	 * @since 0.1.0
 	 * @param array &$state Scan state (updated by reference).
 	 * @return string
@@ -247,11 +269,18 @@ class Karetaker_Scanner {
 			return 'no_dir';
 		}
 
-		$offset  = isset( $state['uploads_offset'] ) ? (int) $state['uploads_offset'] : 0;
-		$index   = 0;
+		$resume = isset( $state['uploads_resume'] ) ? (string) $state['uploads_resume'] : '';
+		$cycle  = isset( $state['uploads_cycle'] ) && is_array( $state['uploads_cycle'] ) ? $state['uploads_cycle'] : array();
+
+		if ( '' === $resume ) {
+			$cycle = array();
+		}
+
+		$known   = isset( $state['uploads_found'] ) && is_array( $state['uploads_found'] ) ? $state['uploads_found'] : array();
 		$checked = 0;
 		$found   = array();
 		$done    = true;
+		$last    = $resume;
 
 		$items = new RecursiveIteratorIterator(
 			new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ),
@@ -259,9 +288,13 @@ class Karetaker_Scanner {
 		);
 
 		foreach ( $items as $item ) {
-			++$index;
+			if ( ! $item->isFile() ) {
+				continue;
+			}
 
-			if ( $index <= $offset ) {
+			$rel = ltrim( str_replace( $dir, '', $item->getPathname() ), '/\\' );
+
+			if ( '' !== $resume && strcmp( $rel, $resume ) <= 0 ) {
 				continue;
 			}
 
@@ -271,27 +304,26 @@ class Karetaker_Scanner {
 			}
 
 			++$checked;
-
-			if ( ! $item->isFile() ) {
-				continue;
-			}
+			$last = $rel;
 
 			$name = $item->getFilename();
-
-			if ( preg_match( self::EXECUTABLE_REGEX, $name ) ) {
-				$found[] = ltrim( str_replace( $dir, '', $item->getPathname() ), '/\\' );
+			if ( self::is_uploads_risk_file( $name ) ) {
+				$found[] = $rel;
 			}
 		}
 
-		$state['uploads_offset'] = $done ? 0 : ( $offset + $checked );
-
-		$known = isset( $state['uploads_found'] ) && is_array( $state['uploads_found'] ) ? $state['uploads_found'] : array();
+		$cycle = array_values( array_unique( array_merge( $cycle, $found ) ) );
 		$fresh = array_values( array_diff( $found, $known ) );
 
 		if ( $done ) {
-			$state['uploads_found'] = $found;
+			$state['uploads_found']  = $cycle;
+			$state['uploads_cycle']  = array();
+			$state['uploads_resume'] = '';
+			$state['uploads_offset'] = 0;
 		} else {
-			$state['uploads_found'] = array_values( array_unique( array_merge( $known, $found ) ) );
+			$state['uploads_cycle']  = $cycle;
+			$state['uploads_resume'] = $last;
+			$state['uploads_offset'] = 0;
 		}
 
 		if ( $fresh ) {
@@ -308,6 +340,22 @@ class Karetaker_Scanner {
 		}
 
 		return ( $done ? 'clean:' : 'partial:' ) . $checked;
+	}
+
+	/**
+	 * Whether an uploads basename looks executable or enables PHP execution.
+	 *
+	 * @since 0.1.3
+	 * @param string $name Basename.
+	 * @return bool
+	 */
+	public static function is_uploads_risk_file( $name ) {
+		$name = (string) $name;
+		if ( in_array( strtolower( $name ), self::UPLOADS_DOTFILES, true ) ) {
+			return true;
+		}
+
+		return (bool) preg_match( self::EXECUTABLE_REGEX, $name );
 	}
 
 	/**

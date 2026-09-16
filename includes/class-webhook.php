@@ -83,7 +83,7 @@ class Karetaker_Webhook {
 			$headers['X-Karetaker-Signature'] = 'sha256=' . hash_hmac( 'sha256', $body, $secret );
 		}
 
-		$response = wp_remote_post(
+		$response = wp_safe_remote_post(
 			$url,
 			array(
 				'timeout' => 5,

@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 STAGE_ROOT="$(mktemp -d)"
 STAGE="$STAGE_ROOT/karetaker"
-OUT="${1:-$ROOT/dist/karetaker-0.1.1.zip}"
+OUT="${1:-$ROOT/dist/karetaker-0.1.3.zip}"
 mkdir -p "$(dirname "$OUT")" "$STAGE"
 
 rsync -a \
@@ -23,10 +23,13 @@ rsync -a \
   --exclude='CLAUDE.md' \
   --exclude='AGENTS.md' \
   --exclude='CODE-NOTES.md' \
+  --exclude='README.md' \
   --exclude='docs' \
   --exclude='tools' \
   --exclude='assets/banner-*.png' \
   --exclude='assets/icon-*.png' \
+  --exclude='assets/icon.svg' \
+  --exclude='assets/logo-*.png' \
   --exclude='assets/screenshot-*.png' \
   --exclude='dist' \
   --exclude='tests' \

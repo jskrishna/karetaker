@@ -1,8 +1,8 @@
-# Karetaker — Seed alert email on activate
+# Karetaker: Seed alert email on activate
 
 Date: 2026-09-13  
 Status: approved in conversation  
-Repo: `~/karetaker` only — do not modify `spice-web-media`  
+Repo: `~/karetaker` only: do not modify `spice-web-media`  
 Related: `Karetaker_Settings::alert_email()`, Settings Alerts panel in `class-admin.php`
 
 ## Goal
@@ -15,11 +15,11 @@ Empty `alert_email` already falls back to `admin_email` at send time. That is co
 
 ## Behaviour
 
-1. **Activate seed** — During `karetaker_activate()`, if the stored `alert_email` is empty **and** `get_option( 'admin_email' )` passes `is_email()`, write that address into `karetaker_settings['alert_email']` (merge with existing settings / defaults; do not wipe other keys).
-2. **Never overwrite** — If `alert_email` is already a non-empty string, leave it unchanged on reactivate/upgrade activate.
-3. **Settings** — Existing Alert email field remains the override. Admin may set any valid email or clear the field.
-4. **Send-path fallback unchanged** — `Karetaker_Settings::alert_email()` continues: empty or invalid stored value → `admin_email`. Safety net when activate could not seed (bad/missing admin email) or the field is cleared later.
-5. **No live sync** — Changing WordPress Settings → General → Administration Email Address does **not** rewrite Karetaker’s stored `alert_email`. The bound value is a snapshot until the admin edits Karetaker Settings.
+1. **Activate seed**: During `karetaker_activate()`, if the stored `alert_email` is empty **and** `get_option( 'admin_email' )` passes `is_email()`, write that address into `karetaker_settings['alert_email']` (merge with existing settings / defaults; do not wipe other keys).
+2. **Never overwrite**: If `alert_email` is already a non-empty string, leave it unchanged on reactivate/upgrade activate.
+3. **Settings**: Existing Alert email field remains the override. Admin may set any valid email or clear the field.
+4. **Send-path fallback unchanged**: `Karetaker_Settings::alert_email()` continues: empty or invalid stored value → `admin_email`. Safety net when activate could not seed (bad/missing admin email) or the field is cleared later.
+5. **No live sync**: Changing WordPress Settings → General → Administration Email Address does **not** rewrite Karetaker’s stored `alert_email`. The bound value is a snapshot until the admin edits Karetaker Settings.
 
 ## Implementation sketch
 
@@ -43,5 +43,5 @@ No new options, transients, files, or uninstall paths.
 
 - Fresh activate on a site with a valid `admin_email`: Settings shows that address in Alert email; ACT mail goes there.
 - Reactivate after the admin set a custom alert email: custom value preserved.
-- Activate when `admin_email` is empty/invalid: `alert_email` stays empty; send path still uses whatever `alert_email()` resolves (may fail `is_email` and skip mail — same as today).
+- Activate when `admin_email` is empty/invalid: `alert_email` stays empty; send path still uses whatever `alert_email()` resolves (may fail `is_email` and skip mail: same as today).
 - Clearing Alert email in Settings and saving: stored empty; subsequent alerts use current `admin_email` via fallback.

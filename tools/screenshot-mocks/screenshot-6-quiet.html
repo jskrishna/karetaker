@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Karetaker quiet week overview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1280px;
+    height: 900px;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f0f0f1;
+    color: #1d2327;
+    padding: 20px 24px;
+  }
+  .wrap { max-width: 1180px; }
+  .shell {
+    background: #fff;
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    overflow: hidden;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #dcdcde;
+    background: linear-gradient(180deg, #fafafa 0%, #fff 100%);
+  }
+  .brand img { width: 44px; height: 44px; border-radius: 10px; background: #141414; }
+  .brand h1 { font-size: 22px; font-weight: 600; }
+  .brand p { margin-top: 2px; color: #646970; font-size: 13px; }
+  .nav {
+    display: flex;
+    gap: 4px;
+    padding: 10px 16px;
+    border-bottom: 1px solid #dcdcde;
+  }
+  .nav span {
+    display: inline-flex;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    color: #646970;
+  }
+  .nav .on { background: #1d2327; color: #fff; font-weight: 600; }
+  .body { padding: 18px 24px 24px; }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+  .toolbar .left { display: flex; gap: 8px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 12px;
+    border: 1px solid #c3c4c7;
+    background: #fff;
+  }
+  .btn.primary { background: #b36a1e; border-color: #b36a1e; color: #fff; }
+  .hint { font-size: 12px; color: #646970; }
+  .hint code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: #f0f0f1;
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+  .alert {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    border: 1px solid #b8e6c1;
+    background: #edfaef;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .alert strong { display: block; color: #007a20; margin-bottom: 2px; }
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .metric {
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .metric .label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #646970;
+    margin-bottom: 8px;
+  }
+  .metric .value { font-size: 22px; font-weight: 600; line-height: 1.15; }
+  .metric .meta { margin-top: 4px; font-size: 12px; color: #646970; }
+  .metric.ok { background: #edfaef; border-color: #b8e6c1; }
+  .metric.ok .value { color: #00a32a; }
+  .panel {
+    border: 1px solid #dcdcde;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .panel h2 {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px 16px;
+    border-bottom: 1px solid #dcdcde;
+    background: #fafafa;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 10px 16px; border-top: 1px solid #f0f0f1; }
+  th { font-size: 12px; color: #646970; font-weight: 600; background: #fff; border-top: 0; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #edfaef;
+    color: #007a20;
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .about {
+    padding: 14px 16px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #1d2327;
+  }
+  .about .muted { color: #646970; margin-top: 8px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="shell">
+      <div class="brand">
+        <img src="../../assets/logo-mark.png" alt="" />
+        <div>
+          <h1>Karetaker</h1>
+          <p>A watchtower for WordPress.</p>
+        </div>
+      </div>
+      <div class="nav">
+        <span class="on">Overview</span>
+        <span>Activity</span>
+        <span>Harden</span>
+        <span>Settings</span>
+      </div>
+      <div class="body">
+        <div class="toolbar">
+          <div class="left">
+            <span class="btn primary">Run scan now</span>
+            <span class="btn">Site Health</span>
+          </div>
+          <div class="hint">Same as <code>wp karetaker scan</code> · Next: September 16, 2026 6:00 am</div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric ok">
+            <div class="label">Last scan</div>
+            <div class="value">2 hours ago</div>
+            <div class="meta">2026-09-15 18:00:12 UTC</div>
+          </div>
+          <div class="metric ok">
+            <div class="label">Guard</div>
+            <div class="value">All ok</div>
+          </div>
+          <div class="metric ok">
+            <div class="label">ACT (7 days)</div>
+            <div class="value">0</div>
+          </div>
+          <div class="metric">
+            <div class="label">Events stored</div>
+            <div class="value">1412</div>
+          </div>
+          <div class="metric">
+            <div class="label">Agency</div>
+            <div class="value">On</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Last scan slices</h2>
+          <table>
+            <thead>
+              <tr><th>Slice</th><th>Key</th><th>Result</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>MU-plugins</td><td><code>muplugins</code></td><td><span class="pill">clean</span></td></tr>
+              <tr><td>Uploads</td><td><code>uploads</code></td><td><span class="pill">clean:4120</span></td></tr>
+              <tr><td>Cron</td><td><code>cron</code></td><td><span class="pill">clean</span></td></tr>
+              <tr><td>Options</td><td><code>options</code></td><td><span class="pill">clean</span></td></tr>
+              <tr><td>Guard</td><td><code>guard</code></td><td><span class="pill">clean</span></td></tr>
+              <tr><td>Checksums</td><td><code>checksums</code></td><td><span class="pill">core:complete</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h2>What Karetaker does</h2>
+          <div class="about">
+            Karetaker is a watchtower: it notices compromise signals, watches for one-checkbox business catastrophes, and emails you only for act-now events.
+            <div class="muted">Staying silent is the poinog and Watch stay in the dashboard until a human needs to act.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

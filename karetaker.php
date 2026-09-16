@@ -1,9 +1,11 @@
 <?php
 /**
  * Plugin Name: Karetaker
- * Description: Watches a WordPress site for the changes that indicate compromise, and tells the owner only when something needs them.
- * Version:     0.1.1
+ * Plugin URI:  https://www.krikir.com/karetaker/
+ * Description: Watches a WordPress site for compromise signals and tells the owner only when something needs them.
+ * Version:     0.1.3
  * Author:      Team Krikir
+ * Author URI:  https://www.krikir.com/
  * License:     GPLv2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Update URI:  false
@@ -18,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'KARETAKER_VERSION', '0.1.1' );
+define( 'KARETAKER_VERSION', '0.1.3' );
 define( 'KARETAKER_FILE', __FILE__ );
 define( 'KARETAKER_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KARETAKER_SLUG', 'karetaker' );

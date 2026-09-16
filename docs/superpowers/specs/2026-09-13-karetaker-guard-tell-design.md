@@ -1,8 +1,8 @@
-# Karetaker — Guard + Tell slice
+# Karetaker: Guard + Tell slice
 
 Date: 2026-09-13  
 Status: approved in conversation (Guard §1, Tell §2)  
-Repo: `~/karetaker` only — do not modify `spice-web-media`  
+Repo: `~/karetaker` only: do not modify `spice-web-media`  
 Parent design: `docs/design.md` (build order stages 3–4)
 
 ## Goal
@@ -18,7 +18,7 @@ Out of scope for this slice: Harden, agency signed REST endpoint, WordPress.org 
 - Never touch `wp-config.php`, `.htaccess`, or server config.
 - No lockouts, no WAF, no score/grade/green tick.
 - Prefix `karetaker_`; ABSPATH guard on every file.
-- Kill switch (`KARETAKER_DISABLE` / `wp-content/karetaker-disable`) suppresses boot — alerts must not send when disabled.
+- Kill switch (`KARETAKER_DISABLE` / `wp-content/karetaker-disable`) suppresses boot: alerts must not send when disabled.
 - Uninstall remains total (new options/cron/hooks cleaned in `uninstall.php`).
 
 ## Architecture
@@ -49,12 +49,12 @@ Wire requires from `karetaker.php`; `Karetaker_Admin::init()` on `admin_init` / 
 
 ### Touch existing
 
-- `class-scanner.php` — call `Karetaker_Guard::scan( $state )` in the scan loop; persist guard snapshot in `karetaker_scan_state['guard']`.
-- `class-events.php` — fire `karetaker_event_recorded` after successful insert; keep `guard_tripped` as ACT.
-- `class-hooks.php` — optional thin hooks for `blog_public` and last-admin (or Guard registers its own hooks in `init()`).
-- `class-cli.php` — `wp karetaker scan` already runs full scan; ensure Guard is included; optional `wp karetaker status` fields for last guard checks.
-- `uninstall.php` — clear alert dedupe transients pattern if any options added; unschedule nothing new if Guard uses existing `karetaker_scan` hook only. Delete any new options if introduced (prefer reusing `karetaker_settings` / scan state).
-- `CODE-NOTES.md` — document Guard mail probe choice and alert dedupe.
+- `class-scanner.php`: call `Karetaker_Guard::scan( $state )` in the scan loop; persist guard snapshot in `karetaker_scan_state['guard']`.
+- `class-events.php`: fire `karetaker_event_recorded` after successful insert; keep `guard_tripped` as ACT.
+- `class-hooks.php`: optional thin hooks for `blog_public` and last-admin (or Guard registers its own hooks in `init()`).
+- `class-cli.php`: `wp karetaker scan` already runs full scan; ensure Guard is included; optional `wp karetaker status` fields for last guard checks.
+- `uninstall.php`: clear alert dedupe transients pattern if any options added; unschedule nothing new if Guard uses existing `karetaker_scan` hook only. Delete any new options if introduced (prefer reusing `karetaker_settings` / scan state).
+- `CODE-NOTES.md`: document Guard mail probe choice and alert dedupe.
 
 ## Guard
 
@@ -88,7 +88,7 @@ Record `guard_tripped` only on transition **good → bad** (or first observation
 
 Do **not** send probe emails to the owner or to external sinks.
 
-1. Primary: hook `wp_mail_failed` — when WordPress fails a real send, record Guard trip with `check=mail_failed` and sanitized error message (no credentials, truncate).
+1. Primary: hook `wp_mail_failed`: when WordPress fails a real send, record Guard trip with `check=mail_failed` and sanitized error message (no credentials, truncate).
 2. Secondary (scan): **omit in this slice.** Site Health mail signals are version-fragile; rely on `wp_mail_failed` only until a stable core signal is confirmed.
 
 Do not invent SMTP plugin-specific APIs in v1.
@@ -97,7 +97,7 @@ Do not invent SMTP plugin-specific APIs in v1.
 
 Use capability `manage_options`, not role slug alone (custom roles). Count must run only in admin/cron/CLI. If count is 0, trip Guard. Hook path: after `remove_user_role` / `deleted_user` / `set_user_role`, re-count; if 0, trip.
 
-## Tell — push (alerts)
+## Tell: push (alerts)
 
 ### Trigger
 
@@ -112,7 +112,7 @@ ACT codes (six product alerts; multiple codes map to the product list):
 
 1. `admin_user_added`
 2. `role_escalated`
-3. `registration_opened` (and registration/default_role danger already recorded as ACT by Watch hooks — include those ACT codes in the allow-list)
+3. `registration_opened` (and registration/default_role danger already recorded as ACT by Watch hooks: include those ACT codes in the allow-list)
 4. `muplugin_changed`, `uploads_php_found`
 5. `file_hash_mismatch`
 6. `guard_tripped`
@@ -128,16 +128,16 @@ Do not apply a global rate cap that swallows distinct ACT events.
 ### Message
 
 - To: `Karetaker_Settings::alert_email()`
-- Subject: `[Karetaker] {short plain verdict}` — no threat theater
+- Subject: `[Karetaker] {short plain verdict}`: no threat theater
 - Body: what happened, why it matters, one concrete action, site URL, link to Tools → Karetaker
 - Unsubscribe (this slice): plain-language instruction in the body to turn off **Enable alerts** under Tools → Karetaker → Settings. No one-click signed public link in v1 (avoids a new unauthenticated endpoint). A nonce-gated admin-post handler can be added later if needed.
 - Headers: reasonable `From` via `wp_mail` defaults; no bundling of multiple events
 
 ### Failure
 
-If `wp_mail` returns false, do not loop; optionally record severity LOG `setting_changed`-style is wrong — skip extra noise unless useful for CLI debug later. Prefer silent fail for this slice.
+If `wp_mail` returns false, do not loop; optionally record severity LOG `setting_changed`-style is wrong: skip extra noise unless useful for CLI debug later. Prefer silent fail for this slice.
 
-## Tell — pull (admin)
+## Tell: pull (admin)
 
 ### Menu
 
@@ -145,9 +145,9 @@ If `wp_mail` returns false, do not loop; optionally record severity LOG `setting
 
 ### Screens
 
-1. **Overview** — last scan time/results (from scan state), list of watch/guard checks as facts (last run / currently bad), count of ACT events this week, link to log. No score.
-2. **Activity** — `WP_List_Table` over `Karetaker_Events::query()`; columns: time, severity, code, user, IP, context (escaped). Filters: severity, code. Pagination.
-3. **Settings** — Settings API fields already conceptualized: `alert_email`, `alerts_enabled`, `row_cap`, `trusted_proxies`, `forwarded_header`. Sanitize on save; escape on display.
+1. **Overview**: last scan time/results (from scan state), list of watch/guard checks as facts (last run / currently bad), count of ACT events this week, link to log. No score.
+2. **Activity**: `WP_List_Table` over `Karetaker_Events::query()`; columns: time, severity, code, user, IP, context (escaped). Filters: severity, code. Pagination.
+3. **Settings**: Settings API fields already conceptualized: `alert_email`, `alerts_enabled`, `row_cap`, `trusted_proxies`, `forwarded_header`. Sanitize on save; escape on display.
 
 ### Security
 
@@ -169,7 +169,7 @@ If `wp_mail` returns false, do not loop; optionally record severity LOG `setting
 - Flip `blog_public` to 0 → one `guard_tripped`; flip back → no spam; flip again → one new event after clear  
 - Trigger `wp_mail_failed` (or mock) → mail_failed once per dedupe window for alerts  
 - Invalidate admin email → guard trip  
-- Remove last admin in a staging copy only — careful  
+- Remove last admin in a staging copy only: careful  
 - ACT event → exactly one email; duplicate record within 24h → no second email  
 - Overview + log render escaped context with XSS-like payload in context  
 - Front-end HTML page: still 0 Karetaker DB queries (SAVEQUERIES or Query Monitor)  

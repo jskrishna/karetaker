@@ -53,9 +53,24 @@ class Karetaker_Admin {
 			'manage_options',
 			self::PAGE_SLUG,
 			array( __CLASS__, 'render_page' ),
-			'dashicons-shield-alt',
+			self::menu_icon_data_uri(),
 			80
 		);
+	}
+
+	/**
+	 * Returns a white menu mark as a data URI (avoids SVG file-cache staying gray).
+	 *
+	 * WordPress paints custom SVG menu icons as CSS background-image, so a hard-coded
+	 * gray fill cannot inherit dashicon colors. Use pure white to match other admin icons.
+	 *
+	 * @since 0.1.1
+	 * @return string
+	 */
+	private static function menu_icon_data_uri() {
+		$svg = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><circle cx="10" cy="4" r="2.2" fill="#ffffff"/><rect x="7.6" y="7.2" width="4.8" height="2.2" fill="#ffffff"/><rect x="6" y="11" width="8" height="2.2" fill="#ffffff"/><rect x="4.4" y="14.8" width="11.2" height="2.2" fill="#ffffff"/></svg>';
+
+		return 'data:image/svg+xml;base64,' . base64_encode( $svg ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- SVG data URI for admin menu icon.
 	}
 
 	/**
@@ -182,8 +197,8 @@ class Karetaker_Admin {
 					}
 					?>
 				</div>
-				<?php self::render_footer(); ?>
 			</div>
+			<?php self::render_footer(); ?>
 		</div>
 		<?php
 	}
@@ -195,10 +210,18 @@ class Karetaker_Admin {
 	 * @return void
 	 */
 	private static function render_header() {
+		$mark_url = plugins_url( 'assets/brand-mark.svg', KARETAKER_FILE );
 		?>
 		<header class="kt-brand">
 			<div class="kt-brand__mark" aria-hidden="true">
-				<span class="dashicons dashicons-shield-alt"></span>
+				<img
+					class="kt-brand__mark-img"
+					src="<?php echo esc_url( $mark_url ); ?>"
+					alt=""
+					width="44"
+					height="44"
+					decoding="async"
+				/>
 			</div>
 			<div>
 				<h1 class="kt-brand__title"><?php echo esc_html__( 'Karetaker', 'karetaker' ); ?></h1>
@@ -218,11 +241,21 @@ class Karetaker_Admin {
 		?>
 		<p class="kt-footer">
 			<?php
-			echo esc_html(
+			echo wp_kses(
 				sprintf(
-					/* translators: %s: plugin version */
-					__( 'Karetaker v%s · by Team Krikir', 'karetaker' ),
-					KARETAKER_VERSION
+					/* translators: 1: plugin version, 2: opening anchor tag, 3: closing anchor tag */
+					__( 'Karetaker v%1$s · by %2$sTeam Krikir%3$s', 'karetaker' ),
+					esc_html( KARETAKER_VERSION ),
+					'<a class="kt-footer__link" href="' . esc_url( 'https://www.krikir.com/' ) . '" target="_blank" rel="noopener noreferrer">',
+					'</a>'
+				),
+				array(
+					'a' => array(
+						'class'  => true,
+						'href'   => true,
+						'target' => true,
+						'rel'    => true,
+					),
 				)
 			);
 			?>
@@ -453,7 +486,7 @@ class Karetaker_Admin {
 			),
 			'user_enum'     => array(
 				'label' => __( 'Block user enumeration', 'karetaker' ),
-				'help'  => __( 'Hide REST user routes for guests and redirect digit-only ?author= queries.', 'karetaker' ),
+				'help'  => __( 'Hide REST user routes for guests, redirect ?author= and /author/ archives, and remove the users sitemap.', 'karetaker' ),
 			),
 			'version'       => array(
 				'label' => __( 'Hide WordPress version', 'karetaker' ),
@@ -468,6 +501,44 @@ class Karetaker_Admin {
 				'help'  => __( 'Allow application passwords only for users with manage_options.', 'karetaker' ),
 			),
 		);
+	}
+
+	/**
+	 * Renders a read-only sample ACT email using the real alert builders.
+	 *
+	 * @since 0.1.2
+	 * @return void
+	 */
+	private static function render_alert_email_preview() {
+		$preview = Karetaker_Alerts::sample_preview();
+		?>
+		<div class="kt-email-preview" id="karetaker-alert-email-preview">
+			<div class="kt-email-preview__head">
+				<span class="dashicons dashicons-visibility" aria-hidden="true"></span>
+				<strong><?php echo esc_html__( 'Sample ACT email', 'karetaker' ); ?></strong>
+				<span class="kt-badge kt-badge--act"><?php echo esc_html__( 'Act-now', 'karetaker' ); ?></span>
+			</div>
+			<p class="kt-email-preview__note">
+				<?php echo esc_html__( 'Preview only. This message is not sent. Same HTML template and builders as real ACT alerts.', 'karetaker' ); ?>
+			</p>
+			<dl class="kt-email-preview__meta">
+				<div>
+					<dt><?php echo esc_html__( 'To', 'karetaker' ); ?></dt>
+					<dd><?php echo esc_html( $preview['to'] ); ?></dd>
+				</div>
+				<div>
+					<dt><?php echo esc_html__( 'Subject', 'karetaker' ); ?></dt>
+					<dd><?php echo esc_html( $preview['subject'] ); ?></dd>
+				</div>
+			</dl>
+			<iframe
+				class="kt-email-preview__frame"
+				title="<?php echo esc_attr__( 'Sample ACT email HTML preview', 'karetaker' ); ?>"
+				sandbox=""
+				srcdoc="<?php echo esc_attr( $preview['html'] ); ?>"
+			></iframe>
+		</div>
+		<?php
 	}
 
 	/**
@@ -532,6 +603,7 @@ class Karetaker_Admin {
 					</td>
 				</tr>
 			</table>
+			<?php self::render_alert_email_preview(); ?>
 			</div>
 			<div class="kt-panel kt-form-table">
 				<div class="kt-panel__head">
@@ -652,7 +724,12 @@ class Karetaker_Admin {
 			</div>
 			<div class="kt-panel__body">
 			<p class="description">
-				<?php echo esc_html__( 'Read-only signed status for remote monitoring. Empty token keeps the channel off.', 'karetaker' ); ?>
+				<?php
+				echo esc_html__(
+					'Lets your agency check site health remotely (read-only JSON) without logging into WordPress. Generate a token to turn it on. An empty token keeps it off, and it can never change the site.',
+					'karetaker'
+				);
+				?>
 			</p>
 		<?php if ( ! $has ) : ?>
 			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">

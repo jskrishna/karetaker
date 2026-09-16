@@ -87,7 +87,7 @@ class Karetaker_Guidance {
 			),
 			'file_hash_mismatch'  => array(
 				'title'      => __( 'Plugin or theme files do not match wordpress.org', 'karetaker' ),
-				'summary'    => __( 'File contents no longer match the official package. That can be a legitimate fork — or a modified plugin used as a backdoor.', 'karetaker' ),
+				'summary'    => __( 'File contents no longer match the official package. That can be a legitimate fork, or a modified plugin used as a backdoor.', 'karetaker' ),
 				'steps'      => array(
 					__( 'Note the subject in the event context (core / plugin slug).', 'karetaker' ),
 					__( 'Reinstall from wordpress.org or your trusted source if you did not edit those files.', 'karetaker' ),
@@ -268,7 +268,7 @@ class Karetaker_Guidance {
 			return self::normalize(
 				array(
 					'title'      => __( 'Worth a look', 'karetaker' ),
-					'summary'    => __( 'This event is on the watch list — not an emergency, but confirm it was intentional.', 'karetaker' ),
+					'summary'    => __( 'This event is on the watch list, not an emergency, but confirm it was intentional.', 'karetaker' ),
 					'steps'      => array(
 						__( 'Read the event details.', 'karetaker' ),
 					),
@@ -316,7 +316,7 @@ class Karetaker_Guidance {
 				'steps'      => array(
 					__( 'Check the error in the event details (often SMTP authentication).', 'karetaker' ),
 					__( 'Fix your SMTP / transactional mail plugin credentials, or ask the host to allow PHP mail.', 'karetaker' ),
-					__( 'Send a test email (or submit a contact form) after fixing — Guard clears when mail starts succeeding again.', 'karetaker' ),
+					__( 'Send a test email (or submit a contact form) after fixing. Guard clears when mail starts succeeding again.', 'karetaker' ),
 				),
 				'link'       => admin_url( 'plugins.php' ),
 				'link_label' => __( 'Open Plugins', 'karetaker' ),

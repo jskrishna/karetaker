@@ -46,7 +46,7 @@
 - Modify: `karetaker.php` (require status only for now, or with agency in Task 2)
 
 **Interfaces:**
-- `Karetaker_Status::snapshot(): array` — keys exactly as spec minus `sig`
+- `Karetaker_Status::snapshot(): array`: keys exactly as spec minus `sig`
 - Settings default `'agency_token' => ''`
 - `Karetaker_Settings::agency_token(): string`
 
@@ -128,9 +128,9 @@ Expected: JSON with `version`, `harden.desired`, `guard`, no `sig`.
 - `Karetaker_Agency::init(): void`
 - `Karetaker_Agency::permission_check(): bool|WP_Error`
 - `Karetaker_Agency::get_status(): WP_REST_Response`
-- `Karetaker_Agency::request_token(): string` — from Bearer or `token` query
+- `Karetaker_Agency::request_token(): string`: from Bearer or `token` query
 - `Karetaker_Agency::sign( array $payload, string $token ): string`
-- `Karetaker_Agency::canonical_json( array $data ): string` — recursive ksort + wp_json_encode
+- `Karetaker_Agency::canonical_json( array $data ): string`: recursive ksort + wp_json_encode
 
 - [ ] **Step 1: Implement recursive ksort + HMAC**
 
@@ -171,7 +171,7 @@ if ( '' === $provided || ! hash_equals( $token, $provided ) ) {
 return true;
 ```
 
-Extract Bearer: if `Authorization` header matches `/^Bearer\s+(\S+)$/i`, use capture; else `isset( $_GET['token'] )` sanitized as plain string (do not use `sanitize_key` — it would mangle the password). Use `sanitize_text_field( wp_unslash( ... ) )` or raw unslash with length cap.
+Extract Bearer: if `Authorization` header matches `/^Bearer\s+(\S+)$/i`, use capture; else `isset( $_GET['token'] )` sanitized as plain string (do not use `sanitize_key`: it would mangle the password). Use `sanitize_text_field( wp_unslash( .. ) )` or raw unslash with length cap.
 
 - [ ] **Step 3: register_rest_route on `rest_api_init`**
 
@@ -255,7 +255,7 @@ Three actions (or one with `karetaker_agency_action` field):
 
 Each: `manage_options` + `check_admin_referer( 'karetaker_agency_token' )`.
 
-Generate/regenerate: create token, `Settings::update`, `Events::record( 'setting_changed', array( 'option' => 'agency_token', 'value' => 'generated'|'regenerated' ) )`, store plaintext once in a **user meta transient** or `set_transient( 'karetaker_agency_token_once_' . get_current_user_id(), $token, 60 )` for the notice — **do not** put token in the redirect URL.
+Generate/regenerate: create token, `Settings::update`, `Events::record( 'setting_changed', array( 'option' => 'agency_token', 'value' => 'generated'|'regenerated' ) )`, store plaintext once in a **user meta transient** or `set_transient( 'karetaker_agency_token_once_' . get_current_user_id(), $token, 60 )` for the notice: **do not** put token in the redirect URL.
 
 Clear: set `''`, log `value=cleared`.
 
@@ -288,9 +288,9 @@ wp karetaker log --code=setting_changed --limit=5
 **Files:**
 - Modify: `CODE-NOTES.md`
 
-- [ ] **Step 1: Document** class-status / class-agency — empty token off; Bearer + query; HMAC canonicalization; no event log on HTTP; never log token; CLI without sig.
+- [ ] **Step 1: Document** class-status / class-agency: empty token off; Bearer + query; HMAC canonicalization; no event log on HTTP; never log token; CLI without sig.
 
-- [ ] **Step 2: Kill switch** — with disable file, REST should 404 or not register; remove after.
+- [ ] **Step 2: Kill switch**: with disable file, REST should 404 or not register; remove after.
 
 - [ ] **Step 3 (optional commit):** `docs: note agency status channel`
 

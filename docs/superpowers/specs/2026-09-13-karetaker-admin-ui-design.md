@@ -1,13 +1,13 @@
-# Karetaker Admin UI — design
+# Karetaker Admin UI: design
 
 Date: 2026-09-13  
-Status: approved in conversation (approach 1 — WP-native polish)  
-Repo: `~/karetaker` only — do not edit `spice-web-media`  
+Status: approved in conversation (approach 1: WP-native polish)  
+Repo: `~/karetaker` only: do not edit `spice-web-media`  
 Parent: `docs/design.md` (Admin UI: plain PHP, Settings-style, WP_List_Table; no React / no build)
 
 ## Goal
 
-Replace the basic Tools submenu screen with a top-level, branded, user-friendly admin UI that still feels like WordPress — suitable for WordPress.org — without changing Watch / Guard / Harden / Tell / Agency behaviour.
+Replace the basic Tools submenu screen with a top-level, branded, user-friendly admin UI that still feels like WordPress: suitable for WordPress.org: without changing Watch / Guard / Harden / Tell / Agency behaviour.
 
 ## Decisions locked
 
@@ -36,7 +36,7 @@ Replace the basic Tools submenu screen with a top-level, branded, user-friendly 
 - Replace `add_management_page` with `add_menu_page`.
 - Capability: `manage_options` (unchanged).
 - Slug: keep `karetaker` so bookmarks can migrate with a soft redirect from `tools.php?page=karetaker` → `admin.php?page=karetaker` (same query args).
-- Menu icon: plugin SVG (watchtower), base64 data URI or `plugins_url` to an SVG under `assets/` that **is** shipped in the plugin zip (directory marketing PNGs stay in SVN `assets/` via `.distignore`; ship a small `assets/menu-icon.svg` or `assets/admin/` that is **not** excluded — adjust `.distignore` so admin CSS/SVG ship, marketing banner/screenshots do not).
+- Menu icon: plugin SVG (watchtower), base64 data URI or `plugins_url` to an SVG under `assets/` that **is** shipped in the plugin zip (directory marketing PNGs stay in SVN `assets/` via `.distignore`; ship a small `assets/menu-icon.svg` or `assets/admin/` that is **not** excluded: adjust `.distignore` so admin CSS/SVG ship, marketing banner/screenshots do not).
 - All internal links use `admin_url( 'admin.php?page=karetaker&tab=…' )`.
 
 ### 2. Assets enqueue
@@ -63,13 +63,13 @@ Every tab:
 
 - Keep `Karetaker_List_Table`.
 - Severity column: labels **Log** / **Watch** / **Act-now** (map from severity constants), styled as badges via admin CSS.
-- Context column: human one-liner from known keys (e.g. check name, plugin slug, option); full JSON only as `title` attribute or visually secondary — not the primary cell text.
+- Context column: human one-liner from known keys (e.g. check name, plugin slug, option); full JSON only as `title` attribute or visually secondary, not the primary cell text.
 - User column: keep ID for 0.1.0 (numeric ID already noted in prior work); optional display name later.
 
 ### 6. Harden & Settings
 
 - Behaviour, nonces, capabilities, and save handlers unchanged.
-- Harden: clearer visual hierarchy (label + help + Desired checkbox + Live now); cards or spaced rows via CSS — not a new data model.
+- Harden: clearer visual hierarchy (label + help + Desired checkbox + Live now); cards or spaced rows via CSS, not a new data model.
 - Settings: section headings (Alerts, Retention, Proxies, Agency) for scanability.
 - Agency generate / regenerate / clear unchanged.
 

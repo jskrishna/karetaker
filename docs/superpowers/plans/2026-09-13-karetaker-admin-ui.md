@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Repo: `/Users/jskrishna/karetaker` only — never edit `spice-web-media` source trees.
+- Repo: `/Users/jskrishna/karetaker` only: never edit `spice-web-media` source trees.
 - Spec: `docs/superpowers/specs/2026-09-13-karetaker-admin-ui-design.md`
 - No React / no bundler / no About tab / no Activity filters
 - Save handlers, nonces, `manage_options`, Harden/Agency behaviour unchanged
@@ -166,8 +166,8 @@ Update any `tools.php?page=` redirects in save handlers to `admin_page_url( 'set
 
 - [ ] **Step 5: Smoke**
 
-With Local DB up: open `/wp-admin/admin.php?page=karetaker` — sidebar item present.  
-Open `/wp-admin/tools.php?page=karetaker` — lands on `admin.php?page=karetaker`.
+With Local DB up: open `/wp-admin/admin.php?page=karetaker`: sidebar item present.  
+Open `/wp-admin/tools.php?page=karetaker`: lands on `admin.php?page=karetaker`.
 
 ---
 
@@ -224,11 +224,11 @@ Intro + cards render; no PHP notices.
 **Interfaces:**
 - No new save endpoints; same `harden[key]` fields and nonces
 
-- [ ] **Step 1: Harden** — wrap in card / clearer row hierarchy; kill-switch notice; probe unchanged
+- [ ] **Step 1: Harden**: wrap in card / clearer row hierarchy; kill-switch notice; probe unchanged
 
-- [ ] **Step 2: Settings** — section headings (Alerts, Event retention, Trusted proxies, Agency); card wrap
+- [ ] **Step 2: Settings**: section headings (Alerts, Event retention, Trusted proxies, Agency); card wrap
 
-- [ ] **Step 3: Smoke save** — Harden toggle + Settings email round-trip
+- [ ] **Step 3: Smoke save**: Harden toggle + Settings email round-trip
 
 ---
 
@@ -239,9 +239,9 @@ Intro + cards render; no PHP notices.
 - Optionally: regenerate `assets/screenshot-*.png`
 - Run: `composer phpcs`, `./tools/build-dist.sh`
 
-- [ ] **Step 1: CODE-NOTES** — menu position 80, legacy redirect, which assets ship
+- [ ] **Step 1: CODE-NOTES**: menu position 80, legacy redirect, which assets ship
 
-- [ ] **Step 2: `composer phpcs`** — 0 errors / 0 warnings
+- [ ] **Step 2: `composer phpcs`**: 0 errors / 0 warnings
 
 - [ ] **Step 3: Dist zip** contains `admin.css` + `menu-icon.svg`
 

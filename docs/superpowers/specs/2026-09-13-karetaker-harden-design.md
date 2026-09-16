@@ -1,13 +1,13 @@
-# Karetaker — Harden slice
+# Karetaker: Harden slice
 
 Date: 2026-09-13  
 Status: approved in conversation (§1 toggles, §2 admin/settings)  
-Repo: `~/karetaker` only — do not modify `spice-web-media`  
+Repo: `~/karetaker` only: do not modify `spice-web-media`  
 Parent design: `docs/design.md` (build order stage 5)
 
 ## Goal
 
-Ship **reversible, opt-in Harden** toggles so owners can apply a safe subset of hardening with one-click undo and live “active now” facts — without lockouts, SEO damage, or writing server config.
+Ship **reversible, opt-in Harden** toggles so owners can apply a safe subset of hardening with one-click undo and live “active now” facts: without lockouts, SEO damage, or writing server config.
 
 Out of scope: login throttle, CSP, WAF, agency REST, writing `wp-config.php` / `.htaccess`, wp.org `readme.txt`.
 
@@ -52,7 +52,7 @@ Admin tab Harden ←── live probe (desired vs active this request)
 |---|---|---|
 | `headers` | Send: `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` (geolocation/microphone/camera/payment/usb empty), `Strict-Transport-Security: max-age=15552000` if `is_ssl()` and environment is not `local`. Hook `send_headers` / `login_init` / `admin_init` as needed; respect `headers_sent()`. **No CSP.** | Stop registering header callbacks |
 | `xmlrpc` | `xmlrpc_enabled` → false; unset pingback methods; strip `X-Pingback` from `wp_headers` | Remove filters |
-| `file_editor` | If `! defined( 'DISALLOW_FILE_EDIT' )`, `define( 'DISALLOW_FILE_EDIT', true )` for this request | Next request without define restores editor unless host/wp-config already defined it — UI must show “forced by host” when constant pre-exists |
+| `file_editor` | If `! defined( 'DISALLOW_FILE_EDIT' )`, `define( 'DISALLOW_FILE_EDIT', true )` for this request | Next request without define restores editor unless host/wp-config already defined it: UI must show “forced by host” when constant pre-exists |
 | `user_enum` | For logged-out users, remove `/wp/v2/users` routes from `rest_endpoints`; on front `parse_request`, if `?author=` is digit-only → `wp_safe_redirect( home_url( '/' ), 301 )` and exit | Remove filters/actions |
 | `version` | Remove generator via `the_generator` / remove `generator` from `wp_head` / strip version from script/style via `style_loader_src` / `script_loader_src` only when query arg is `ver` from core (standard pattern) | Remove filters |
 | `registration` | `pre_option_users_can_register` → `0` (do not `update_option`) | Remove filter |

@@ -9,7 +9,7 @@
 **Tech Stack:** WordPress 6.2+, PHP 7.4+, Settings API, `WP_List_Table`, WP-Cron, WP-CLI, `wp_mail`. No build step, no React, no Composer required for this slice.
 
 **Spec:** `docs/superpowers/specs/2026-09-13-karetaker-guard-tell-design.md`  
-**Repo:** `~/karetaker` only — never modify `~/Local Sites/spice-web-media` (symlink only).
+**Repo:** `~/karetaker` only: never modify `~/Local Sites/spice-web-media` (symlink only).
 
 ## Global Constraints
 
@@ -63,7 +63,7 @@ do_action( 'karetaker_event_recorded', $id, $code, $severity, $context );
 return $id;
 ```
 
-Note: `$context` was already sanitized for insert — pass the same sanitized array (re-sanitize is idempotent). Avoid double-encoding; use the array passed to `wp_json_encode`, not the JSON string.
+Note: `$context` was already sanitized for insert: pass the same sanitized array (re-sanitize is idempotent). Avoid double-encoding; use the array passed to `wp_json_encode`, not the JSON string.
 
 Refactor the insert block so sanitized context is in a variable once:
 
@@ -71,7 +71,7 @@ Refactor the insert block so sanitized context is in a variable once:
 $clean_context = self::sanitize_context( $context );
 $severity      = self::severity_for( $code );
 
-// ... insert using $clean_context and $severity ...
+// .. insert using $clean_context and $severity ...
 
 do_action( 'karetaker_event_recorded', $id, $code, $severity, $clean_context );
 ```
@@ -100,7 +100,7 @@ Expected: line containing `fired:` and a positive id; event still appears in `wp
 
 ---
 
-### Task 2: Guard class — state machine + scan checks
+### Task 2: Guard class: state machine + scan checks
 
 **Files:**
 - Create: `includes/class-guard.php`
@@ -112,8 +112,8 @@ Expected: line containing `fired:` and a positive id; event still appears in `wp
 - Consumes: `Karetaker_Events::record`, `Karetaker_Scanner::state` / `save_state` pattern (Guard receives `&$state`)
 - Produces:
   - `Karetaker_Guard::init(): void`
-  - `Karetaker_Guard::scan( array &$state ): string` — return status like `tripped:1` / `clean`
-  - `Karetaker_Guard::evaluate( string $check, bool $is_bad, array $context, array &$state ): bool` — returns true if a new event was recorded
+  - `Karetaker_Guard::scan( array &$state ): string`: return status like `tripped:1` / `clean`
+  - `Karetaker_Guard::evaluate( string $check, bool $is_bad, array $context, array &$state ): bool`: returns true if a new event was recorded
 
 - [ ] **Step 1: Create `includes/class-guard.php`**
 
@@ -265,9 +265,9 @@ class Karetaker_Guard {
 }
 ```
 
-Fix `administrator_count()` if WP version lacks `capability` in `get_users` on very old installs — site requires 6.2+, and `capability` arg exists since 5.9. Keep as written.
+Fix `administrator_count()` if WP version lacks `capability` in `get_users` on very old installs: site requires 6.2+, and `capability` arg exists since 5.9. Keep as written.
 
-Avoid calling `administrator_count()` twice in `scan()` for `no_administrator` — compute once:
+Avoid calling `administrator_count()` twice in `scan()` for `no_administrator`: compute once:
 
 ```php
 $count = self::administrator_count();
@@ -474,7 +474,7 @@ wp karetaker emit admin_user_added
 wp karetaker emit admin_user_added
 ```
 
-Expected: first emit attempts mail once; second suppressed by transient (same context `{source:cli}` from emit — emit uses `array( 'source' => 'cli' )`). Confirm with a counter filter:
+Expected: first emit attempts mail once; second suppressed by transient (same context `{source:cli}` from emit: emit uses `array( 'source' => 'cli' )`). Confirm with a counter filter:
 
 ```php
 add_filter( 'pre_wp_mail', function ( $null, $atts ) {
@@ -489,7 +489,7 @@ Expected count `1` after two identical ACT emits.
 
 ---
 
-### Task 4: Admin shell — menu, overview, settings
+### Task 4: Admin shell: menu, overview, settings
 
 **Files:**
 - Create: `includes/class-admin.php`
@@ -505,10 +505,10 @@ Implement:
 
 - `admin_menu` → `add_management_page( 'Karetaker', 'Karetaker', 'manage_options', 'karetaker', … )`
 - Tabs via `$_GET['tab']` sanitized
-- Overview: last scan from state, guard flags, ACT count this week (`query` with `min_severity` => 2 and `since` => gmdate week ago — add `since` support already in `query()`)
+- Overview: last scan from state, guard flags, ACT count this week (`query` with `min_severity` => 2 and `since` => gmdate week ago: add `since` support already in `query()`)
 - Settings form: `alert_email`, `alerts_enabled` checkbox, `row_cap` number; save via `admin_post_karetaker_save_settings` with `check_admin_referer( 'karetaker_save_settings' )` and `current_user_can( 'manage_options' )`; sanitize email with `sanitize_email`, row_cap cast + clamp via `Karetaker_Settings::row_cap` after update
 
-Trusted proxies fields can be a textarea of CIDRs (one per line) stored as array — sanitize each line.
+Trusted proxies fields can be a textarea of CIDRs (one per line) stored as array: sanitize each line.
 
 - [ ] **Step 2: Require + `Karetaker_Admin::init()` on `admin_menu` / `admin_init` only**
 
@@ -519,7 +519,7 @@ if ( is_admin() ) {
 }
 ```
 
-Do this inside `karetaker_boot` or a dedicated `admin_init` load so front-end never loads admin classes — prefer:
+Do this inside `karetaker_boot` or a dedicated `admin_init` load so front-end never loads admin classes: prefer:
 
 ```php
 add_action( 'admin_menu', … ) // registered from boot is fine; class file only required when `is_admin()`
@@ -546,7 +546,7 @@ function karetaker_boot() {
 }
 ```
 
-(List table file may be empty stub until Task 5 — or create list table in Task 5 and only require it there.)
+(List table file may be empty stub until Task 5, or create list table in Task 5 and only require it there.)
 
 - [ ] **Step 3: Verify in browser**
 
@@ -570,7 +570,7 @@ Open `/wp-admin/tools.php?page=karetaker` as admin. Expected: overview renders, 
 
 Require `WP_List_Table` from `ABSPATH . 'wp-admin/includes/class-wp-list-table.php'` if not loaded.
 
-Columns: `event_time`, `severity`, `event_code`, `user_id`, `ip_display`, `context` — all escaped with `esc_html`. Context as JSON string escaped. No unescaped HTML.
+Columns: `event_time`, `severity`, `event_code`, `user_id`, `ip_display`, `context`: all escaped with `esc_html`. Context as JSON string escaped. No unescaped HTML.
 
 Prepare items using query limit/offset from pagination; total via `Karetaker_Schema::count()` or a count query if filtering (acceptable to use count for unfiltered and page size 20).
 
@@ -582,7 +582,7 @@ Prepare items using query limit/offset from pagination; total via `Karetaker_Sch
 wp karetaker emit guard_tripped
 ```
 
-Or record with context containing `<script>alert(1)</script>` via `wp eval` calling `Karetaker_Events::record( 'guard_tripped', array( 'check' => 'blog_public', 'x' => '<script>alert(1)</script>' ) )`. Open Activity tab — Expected: script tags visible as text, not executed.
+Or record with context containing `<script>alert(1)</script>` via `wp eval` calling `Karetaker_Events::record( 'guard_tripped', array( 'check' => 'blog_public', 'x' => '<script>alert(1)</script>' ) )`. Open Activity tab: Expected: script tags visible as text, not executed.
 
 - [ ] **Step 4 (optional commit):** `feat: add Karetaker activity log list table`
 
@@ -603,7 +603,7 @@ Load a public page with Query Monitor or:
 ```bash
 wp eval '
 define("SAVEQUERIES", true);
-// not ideal in eval — prefer browser QM
+// not ideal in eval: prefer browser QM
 '
 ```
 
@@ -616,7 +616,7 @@ wp eval 'file_put_contents(WP_CONTENT_DIR."/karetaker-disable","");'
 wp karetaker emit admin_user_added
 ```
 
-Expected: not recorded / error from CLI. Remove disable file after.
+Expected, not recorded / error from CLI. Remove disable file after.
 
 - [ ] **Step 4 (optional commit):** `docs: note Guard and Tell implementation decisions`
 
@@ -651,7 +651,7 @@ Expected: not recorded / error from CLI. Remove disable file after.
 
 Two execution options:
 
-1. **Subagent-Driven (recommended)** — fresh subagent per task, review between tasks  
-2. **Inline Execution** — this session, task-by-task with checkpoints  
+1. **Subagent-Driven (recommended)**: fresh subagent per task, review between tasks  
+2. **Inline Execution**: this session, task-by-task with checkpoints  
 
 Which approach?

@@ -175,6 +175,24 @@ class Karetaker_List_Table extends WP_List_Table {
 	}
 
 	/**
+	 * Renders bottom table nav only (no duplicate top bar).
+	 *
+	 * @since 0.1.0
+	 * @param string $which Top or bottom.
+	 * @return void
+	 */
+	protected function display_tablenav( $which ) {
+		if ( 'top' === $which ) {
+			return;
+		}
+		?>
+		<div class="tablenav bottom kt-tablenav">
+			<?php $this->pagination( $which ); ?>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Appends Activity filters to pagination URLs.
 	 *
 	 * @since 0.1.0
@@ -182,6 +200,8 @@ class Karetaker_List_Table extends WP_List_Table {
 	 * @return void
 	 */
 	protected function pagination( $which ) {
+		unset( $which );
+
 		if ( empty( $this->_pagination_args['total_items'] ) ) {
 			return;
 		}
@@ -199,32 +219,43 @@ class Karetaker_List_Table extends WP_List_Table {
 
 		$total_pages = (int) $this->_pagination_args['total_pages'];
 		$current     = (int) $this->get_pagenum();
+		$total_items = (int) $this->_pagination_args['total_items'];
 
-		echo '<div class="tablenav-pages kt-pagination">';
-		echo '<span class="displaying-num">';
+		echo '<div class="kt-pagination">';
+		echo '<span class="kt-pagination__count">';
 		echo esc_html(
 			sprintf(
 				/* translators: %s: number of items */
-				_n( '%s item', '%s items', (int) $this->_pagination_args['total_items'], 'karetaker' ),
-				number_format_i18n( (int) $this->_pagination_args['total_items'] )
+				_n( '%s item', '%s items', $total_items, 'karetaker' ),
+				number_format_i18n( $total_items )
 			)
 		);
 		echo '</span>';
 
 		if ( $total_pages > 1 ) {
-			echo wp_kses_post(
-				paginate_links(
-					array(
-						'base'      => $base . '%_%',
-						'format'    => '&paged=%#%',
-						'current'   => $current,
-						'total'     => $total_pages,
-						'prev_text' => '&laquo;',
-						'next_text' => '&raquo;',
-					)
+			$links = paginate_links(
+				array(
+					'base'      => $base . '%_%',
+					'format'    => '&paged=%#%',
+					'current'   => $current,
+					'total'     => $total_pages,
+					'type'      => 'array',
+					'mid_size'  => 1,
+					'end_size'  => 1,
+					'prev_text' => '&lsaquo; ' . __( 'Prev', 'karetaker' ),
+					'next_text' => __( 'Next', 'karetaker' ) . ' &rsaquo;',
 				)
 			);
+
+			if ( is_array( $links ) && ! empty( $links ) ) {
+				echo '<nav class="kt-pagination__nav" aria-label="' . esc_attr__( 'Activity pages', 'karetaker' ) . '">';
+				foreach ( $links as $link ) {
+					echo wp_kses_post( $link );
+				}
+				echo '</nav>';
+			}
 		}
+
 		echo '</div>';
 	}
 
@@ -381,7 +412,7 @@ class Karetaker_List_Table extends WP_List_Table {
 	 */
 	public static function context_summary( array $context ) {
 		if ( empty( $context ) ) {
-			return '—';
+			return '-';
 		}
 
 		$parts = array();
@@ -425,7 +456,7 @@ class Karetaker_List_Table extends WP_List_Table {
 		if ( empty( $parts ) ) {
 			$json = wp_json_encode( $context );
 			if ( false === $json ) {
-				return '—';
+				return '-';
 			}
 			if ( strlen( $json ) > 80 ) {
 				return substr( $json, 0, 77 ) . '...';

@@ -20,6 +20,13 @@ class Karetaker_Guard {
 	const CHECKS = array( 'blog_public', 'mail_failed', 'admin_email_invalid', 'no_administrator' );
 
 	/**
+	 * Re-entrancy guard for wp_mail_failed handling.
+	 *
+	 * @var bool
+	 */
+	private static $handling_mail_failed = false;
+
+	/**
 	 * Hooks option, mail, and role changes that can trip Guard checks.
 	 *
 	 * @since 0.1.0
@@ -29,6 +36,7 @@ class Karetaker_Guard {
 		add_action( 'update_option_blog_public', array( __CLASS__, 'on_blog_public' ), 10, 2 );
 		add_action( 'update_option_admin_email', array( __CLASS__, 'on_admin_email_option' ), 10, 2 );
 		add_action( 'wp_mail_failed', array( __CLASS__, 'on_mail_failed' ), 10, 1 );
+		add_action( 'wp_mail_succeeded', array( __CLASS__, 'on_mail_succeeded' ), 10, 1 );
 		add_action( 'set_user_role', array( __CLASS__, 'on_user_capability_change' ), 20, 3 );
 		add_action( 'add_user_role', array( __CLASS__, 'on_user_capability_change_add' ), 20, 2 );
 		add_action( 'remove_user_role', array( __CLASS__, 'on_user_capability_change_remove' ), 20, 2 );
@@ -65,6 +73,9 @@ class Karetaker_Guard {
 	/**
 	 * Records guard_tripped when a check newly becomes bad and updates sticky state.
 	 *
+	 * State is persisted before recording so nested hooks (e.g. wp_mail_failed from
+	 * an ACT alert) see was_bad=true and do not re-trip.
+	 *
 	 * @since 0.1.0
 	 * @param string $check Check key from CHECKS.
 	 * @param bool   $is_bad Whether the check is currently bad.
@@ -82,25 +93,45 @@ class Karetaker_Guard {
 			$state['guard'] = array();
 		}
 
-		$prev     = isset( $state['guard'][ $check ] ) && is_array( $state['guard'][ $check ] ) ? $state['guard'][ $check ] : array();
-		$was_bad  = ! empty( $prev['bad'] );
-		$is_bad   = (bool) $is_bad;
-		$recorded = false;
+		$prev    = isset( $state['guard'][ $check ] ) && is_array( $state['guard'][ $check ] ) ? $state['guard'][ $check ] : array();
+		$was_bad = ! empty( $prev['bad'] );
+		$is_bad  = (bool) $is_bad;
 
-		if ( $is_bad && ! $was_bad ) {
-			$ctx = array_merge( array( 'check' => $check ), $context );
-			if ( Karetaker_Events::record( 'guard_tripped', $ctx, 0 ) <= 0 ) {
-				return false;
-			}
-			$recorded = true;
-		}
-
-		$state['guard'][ $check ] = array(
+		$entry = array(
 			'bad'   => $is_bad,
 			'since' => $is_bad ? ( $was_bad && ! empty( $prev['since'] ) ? $prev['since'] : current_time( 'mysql', true ) ) : null,
 		);
 
+		$state['guard'][ $check ] = $entry;
+		self::persist_guard_check( $check, $entry );
+
+		$recorded = false;
+
+		if ( $is_bad && ! $was_bad ) {
+			$ctx = array_merge( array( 'check' => $check ), $context );
+			if ( Karetaker_Events::record( 'guard_tripped', $ctx, 0 ) > 0 ) {
+				$recorded = true;
+			}
+		}
+
 		return $recorded;
+	}
+
+	/**
+	 * Writes one Guard check into the persisted scan state without clobbering siblings.
+	 *
+	 * @since 0.1.3
+	 * @param string $check Check key.
+	 * @param array  $entry Guard entry (bad/since).
+	 * @return void
+	 */
+	private static function persist_guard_check( $check, array $entry ) {
+		$state = Karetaker_Scanner::state();
+		if ( ! isset( $state['guard'] ) || ! is_array( $state['guard'] ) ) {
+			$state['guard'] = array();
+		}
+		$state['guard'][ $check ] = $entry;
+		Karetaker_Scanner::save_state( $state );
 	}
 
 	/**
@@ -160,7 +191,6 @@ class Karetaker_Guard {
 			),
 			$state
 		);
-		Karetaker_Scanner::save_state( $state );
 	}
 
 	/**
@@ -176,7 +206,6 @@ class Karetaker_Guard {
 		$state = Karetaker_Scanner::state();
 		$bad   = '' === (string) $new_value || ! is_email( (string) $new_value );
 		self::evaluate( 'admin_email_invalid', $bad, array(), $state );
-		Karetaker_Scanner::save_state( $state );
 	}
 
 	/**
@@ -187,10 +216,17 @@ class Karetaker_Guard {
 	 * @return void
 	 */
 	public static function on_mail_failed( $error ) {
+		if ( self::$handling_mail_failed ) {
+			return;
+		}
+
+		self::$handling_mail_failed = true;
+
 		$message = '';
 		if ( is_wp_error( $error ) ) {
 			$message = $error->get_error_message();
 		}
+
 		$state = Karetaker_Scanner::state();
 		self::evaluate(
 			'mail_failed',
@@ -198,7 +234,34 @@ class Karetaker_Guard {
 			array( 'error' => sanitize_text_field( substr( (string) $message, 0, 200 ) ) ),
 			$state
 		);
-		Karetaker_Scanner::save_state( $state );
+
+		self::$handling_mail_failed = false;
+	}
+
+	/**
+	 * Clears the mail_failed Guard flag after a successful wp_mail send.
+	 *
+	 * @since 0.1.3
+	 * @param array $mail_data Mail payload from wp_mail_succeeded (unused).
+	 * @return void
+	 */
+	public static function on_mail_succeeded( $mail_data = array() ) {
+		unset( $mail_data );
+
+		if ( self::$handling_mail_failed ) {
+			return;
+		}
+
+		$state = Karetaker_Scanner::state();
+		$prev  = isset( $state['guard']['mail_failed'] ) && is_array( $state['guard']['mail_failed'] )
+			? $state['guard']['mail_failed']
+			: array();
+
+		if ( empty( $prev['bad'] ) ) {
+			return;
+		}
+
+		self::evaluate( 'mail_failed', false, array(), $state );
 	}
 
 	/**
@@ -211,7 +274,6 @@ class Karetaker_Guard {
 		$state = Karetaker_Scanner::state();
 		$count = self::administrator_count();
 		self::evaluate( 'no_administrator', $count < 1, array( 'count' => $count ), $state );
-		Karetaker_Scanner::save_state( $state );
 	}
 
 	/**

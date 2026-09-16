@@ -164,7 +164,7 @@ $karetaker_slice_labels = array(
 			?>
 		</p>
 		<p>
-			<?php echo esc_html__( 'It is not a WAF, malware signature scanner, or login-lockout product by default — and it does not write wp-config.php, .htaccess, or server config.', 'karetaker' ); ?>
+			<?php echo esc_html__( 'It is not a WAF, malware signature scanner, or login-lockout product by default, and it does not write wp-config.php, .htaccess, or server config.', 'karetaker' ); ?>
 		</p>
 	</div>
 </div>

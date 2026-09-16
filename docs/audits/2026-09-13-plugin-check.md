@@ -1,4 +1,4 @@
-# Plugin Check — 2026-09-13 (final .org prep)
+# Plugin Check: 2026-09-13 (final .org prep)
 
 Ran against **`dist/karetaker-0.1.0.zip`** unpacked as `karetaker-pcp` on Local
 (`spice-web-media.local`), Plugin Check 2.1.0. Working tree still has
@@ -7,7 +7,7 @@ Ran against **`dist/karetaker-0.1.0.zip`** unpacked as `karetaker-pcp` on Local
 ## Slug
 
 `https://api.wordpress.org/plugins/info/1.2/?action=plugin_information&request[slug]=karetaker`
-→ `{"error":"Plugin not found."}` — **still free** (re-checked 2026-09-13 12:56 IST).
+→ `{"error":"Plugin not found."}`: **still free** (re-checked 2026-09-13 12:56 IST).
 
 ## Package
 
@@ -17,7 +17,7 @@ Ran against **`dist/karetaker-0.1.0.zip`** unpacked as `karetaker-pcp` on Local
 | `Update URI` in zip | absent |
 | Banner/icon/screenshots in zip | absent (SVN `/assets` only) |
 | Plugin Check ERROR | **0** |
-| Plugin Check WARNING | 22 (Direct DB family — accepted) |
+| Plugin Check WARNING | 22 (Direct DB family: accepted) |
 | WPCS (`composer phpcs`) | clean |
 
 ## Upload checklist (human)
@@ -35,4 +35,4 @@ Ran against **`dist/karetaker-0.1.0.zip`** unpacked as `karetaker-pcp` on Local
 
 - Upload the live symlink tree or a zip that still contains `Update URI: false`.
 - Put marketing PNGs inside the plugin zip.
-- Bump to 1.0.0 for the first upload — Stable tag is `0.1.0`.
+- Bump to 1.0.0 for the first upload: Stable tag is `0.1.0`.

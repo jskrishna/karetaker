@@ -181,6 +181,21 @@ class Karetaker_Checksums {
 			}
 		}
 
+		$extra = self::find_unexpected_core_php( array_keys( $files ), $deadline );
+		if ( is_wp_error( $extra ) ) {
+			return array(
+				'status'   => 'partial',
+				'checked'  => $checked,
+				'modified' => $modified,
+				'offset'   => count( $files ),
+				'total'    => count( $files ),
+			);
+		}
+
+		if ( $extra ) {
+			$modified = array_values( array_unique( array_merge( $modified, $extra ) ) );
+		}
+
 		return array(
 			'status'   => 'complete',
 			'checked'  => $checked,
@@ -188,6 +203,58 @@ class Karetaker_Checksums {
 			'offset'   => 0,
 			'total'    => count( $files ),
 		);
+	}
+
+	/**
+	 * Finds unexpected .php files under wp-admin / wp-includes not in core checksums.
+	 *
+	 * @since 0.1.3
+	 * @param string[] $known Relative paths from the checksum map.
+	 * @param float    $deadline Unix microtime stop; 0 for no limit.
+	 * @return string[]|WP_Error Relative unexpected paths, or WP_Error when out of time.
+	 */
+	public static function find_unexpected_core_php( array $known, $deadline = 0 ) {
+		$known_map = array_fill_keys( $known, true );
+		$extra     = array();
+
+		foreach ( array( 'wp-admin', 'wp-includes' ) as $root ) {
+			$dir = ABSPATH . $root;
+			if ( ! is_dir( $dir ) ) {
+				continue;
+			}
+
+			$items = new RecursiveIteratorIterator(
+				new RecursiveDirectoryIterator( $dir, FilesystemIterator::SKIP_DOTS ),
+				RecursiveIteratorIterator::LEAVES_ONLY
+			);
+
+			foreach ( $items as $item ) {
+				if ( $deadline && microtime( true ) > $deadline ) {
+					return new WP_Error( 'karetaker_timeout', 'Budget exhausted during unexpected-file walk.' );
+				}
+
+				if ( ! $item->isFile() ) {
+					continue;
+				}
+
+				$name = $item->getFilename();
+				if ( ! preg_match( '/\.php$/i', $name ) ) {
+					continue;
+				}
+
+				$abs = $item->getPathname();
+				$rel = ltrim( str_replace( ABSPATH, '', $abs ), '/\\' );
+				$rel = str_replace( '\\', '/', $rel );
+
+				if ( isset( $known_map[ $rel ] ) ) {
+					continue;
+				}
+
+				$extra[] = $rel;
+			}
+		}
+
+		return $extra;
 	}
 
 	/**

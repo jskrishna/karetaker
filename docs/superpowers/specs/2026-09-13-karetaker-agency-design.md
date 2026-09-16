@@ -1,9 +1,9 @@
-# Karetaker — Agency channel slice
+# Karetaker: Agency channel slice
 
 Date: 2026-09-13  
 Status: approved in conversation (§1 auth/payload, §2 files/security)  
-Repo: `~/karetaker` only — do not modify `spice-web-media`  
-Parent design: `docs/design.md` (build order stage 6 — agency channel)
+Repo: `~/karetaker` only: do not modify `spice-web-media`  
+Parent design: `docs/design.md` (build order stage 6: agency channel)
 
 ## Goal
 
@@ -108,7 +108,7 @@ Sources:
 - If token set: masked display (`••••` + last 4), buttons **Regenerate** and **Clear**, copy hint for Bearer header and example `curl`
 - After generate/regenerate: one-time admin notice showing full token (user must copy now)
 - All actions: `manage_options` + dedicated nonces
-- On change: `setting_changed` with `option=agency_token`, `value=generated|regenerated|cleared` — **never** the secret
+- On change: `setting_changed` with `option=agency_token`, `value=generated|regenerated|cleared`: **never** the secret
 - Overview: one row “Agency channel: Off | On”
 
 ## Boot
@@ -120,11 +120,11 @@ require_once … class-agency.php;
 Karetaker_Agency::init();
 ```
 
-`init()` always registers the route; permission_callback enforces token. (Registering when token empty is fine — all callers get 403.)
+`init()` always registers the route; permission_callback enforces token. (Registering when token empty is fine: all callers get 403.)
 
 ## CLI
 
-Refactor `Karetaker_CLI::status()` to print `Karetaker_Status::snapshot()` **without** requiring a token, and **without** `sig` (or with sig only when token configured — prefer **no sig on CLI** to keep SSH output simple; HTTP always includes sig when token set).
+Refactor `Karetaker_CLI::status()` to print `Karetaker_Status::snapshot()` **without** requiring a token, and **without** `sig` (or with sig only when token configured: prefer **no sig on CLI** to keep SSH output simple; HTTP always includes sig when token set).
 
 HTTP path: snapshot + sig.  
 CLI path: snapshot only (same fields minus `sig`).

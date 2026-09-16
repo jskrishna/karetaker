@@ -14,7 +14,7 @@ phpcs.xml.dist
 phpcs.xml
 CLAUDE.md
 AGENTS.md
-CODE-NOTES.md
+README.md
 docs
 tools
 tests
@@ -22,5 +22,7 @@ tests
 .phpcs*
 assets/banner-*.png
 assets/icon-*.png
+assets/icon.svg
+assets/logo-*.png
 assets/screenshot-*.png
 dist

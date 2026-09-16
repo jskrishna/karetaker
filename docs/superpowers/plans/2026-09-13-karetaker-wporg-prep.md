@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Repo: `~/karetaker` only — never edit `spice-web-media` source trees.
+- Repo: `~/karetaker` only: never edit `spice-web-media` source trees.
 - Stable tag / `KARETAKER_VERSION`: `0.1.0`
 - Requires at least: `6.2`; Requires PHP: `7.4`; Tested up to: `7.1`
 - Keep `Update URI: false` in `karetaker.php`
@@ -60,7 +60,7 @@ It is deliberately **not**:
 
 Visibility is pull (Tools → Karetaker, WP-CLI, optional signed REST status). Notification is push (email on ACT-severity events). Hardening is off until you turn each toggle on.
 
-An optional agency status endpoint (`/wp-json/karetaker/v1/status`) is off until you generate a token. The token never grants remote control — status only.
+An optional agency status endpoint (`/wp-json/karetaker/v1/status`) is off until you generate a token. The token never grants remote control: status only.
 
 Kill switch: define `KARETAKER_DISABLE` as true, or place an empty file at `wp-content/karetaker-disable`. Uninstall removes the plugin's table, options, and scheduled hooks.
 
@@ -217,7 +217,7 @@ Expected: No syntax errors
 - `Karetaker_Events::record` documents the `karetaker_event_recorded` side effect in one sentence max
 
 - [x] **Step 1–4:** Add class + method docblocks for each of the four files (every method listed in `grep -E 'function '` for those files)
-- [x] **Step 5:** `php -l` each file — expect no syntax errors
+- [x] **Step 5:** `php -l` each file: expect no syntax errors
 
 ---
 
@@ -240,7 +240,7 @@ Expected: No syntax errors
 **Files:**
 - Modify: `CLAUDE.md`, `CODE-NOTES.md`
 
-- [x] **Step 1:** Update `CLAUDE.md` § Before submission — mark readme + docblocks done; keep checklist: remove `Update URI: false`, Plugin Check/WPCS, re-confirm slug free, screenshots optional
+- [x] **Step 1:** Update `CLAUDE.md` § Before submission: mark readme + docblocks done; keep checklist: remove `Update URI: false`, Plugin Check/WPCS, re-confirm slug free, screenshots optional
 - [x] **Step 2:** Add a short `CODE-NOTES.md` entry under a `readme.txt` / docs heading noting Tested up to 7.1 and that Update URI stays until upload
 - [x] **Step 3:** Acceptance grep
 
@@ -254,7 +254,7 @@ test -f readme.txt && grep -E "^(Stable tag|Tested up to|Requires at least|Requi
 grep "Update URI" karetaker.php
 ```
 
-Expected: `readme.txt` headers match constraints; `Update URI: false` still present; `@return` count in the same ballpark as method count (CLI may have fewer `@return` if void omitted — prefer explicit `@return void`).
+Expected: `readme.txt` headers match constraints; `Update URI: false` still present; `@return` count in the same ballpark as method count (CLI may have fewer `@return` if void omitted: prefer explicit `@return void`).
 
 ---
 

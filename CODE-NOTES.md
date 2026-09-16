@@ -1,7 +1,7 @@
-# Karetaker — why the code is what it is
+# Karetaker: why the code is what it is
 
 PHPDoc / WordPress-Docs blocks live on files, classes, and methods (Plugin Check /
-`WordPress-Docs`). Design rationale stays here — not in essay-length `@return` tags.
+`WordPress-Docs`). Design rationale stays here, not in essay-length `@return` tags.
 
 Design rationale, the research behind it and the out-of-scope list live in
 `docs/superpowers/specs/2026-09-13-karetaker-security-plugin-design.md` in the site repo.
@@ -29,7 +29,7 @@ WordPress.org SVN assets (not shipped in the plugin zip): `banner-1544x500.png`,
 `.distignore` lists files that must not enter a WordPress.org zip (Composer, PHPCS,
 agent markdown, docs, vendor). Plugin Check against the live symlink will flag those;
 check a dist copy instead. The only remaining **ERROR** on a clean package is
-`Update URI: false` — leave it until the first upload.
+`Update URI: false`: leave it until the first upload.
 
 `load_plugin_textdomain()` was removed: directory-hosted plugins get translations
 auto-loaded under the slug since WP 4.6.
@@ -45,17 +45,17 @@ auto-loaded under the slug since WP 4.6.
 (`trim(null)`), so the pass is WordPress + prefix + text domain only. Re-add when a
 PHPCompatibility release supports 8.5.
 
-**Excluded on purpose:** `WordPress.DB.DirectDatabaseQuery.*` — the events table is the
+**Excluded on purpose:** `WordPress.DB.DirectDatabaseQuery.*`: the events table is the
 product; caching those reads would hide integrity signals. Schema DDL and prepared
 interpolated table names keep inline `phpcs:ignore` where needed. Front-end `?author=`
 and admin GET tab/notice reads use `NonceVerification.Recommended` ignores after the
-capability gate — they are not form POSTs.
+capability gate: they are not form POSTs.
 
 ## `karetaker.php`
 
 
 **`Update URI: false` is deliberate while distributing by hand.** Without it, a slug
-collision lets WordPress.org push a *different* plugin of a similar name over this one —
+collision lets WordPress.org push a *different* plugin of a similar name over this one -
 that is the documented reason the header exists. `false` disables update checks entirely,
 which is correct for file-copy installs. **Remove the header immediately before the first
 WordPress.org upload**; if it is ever self-hosted, point it at the update host. Never leave
@@ -63,10 +63,10 @@ it blank.
 
 **The schema check is NOT on `plugins_loaded`, and that is a performance fix, not an
 oversight.** The first version called `Karetaker_Schema::maybe_upgrade()` from
-`karetaker_boot()`, which reads `karetaker_schema_version` — an option
+`karetaker_boot()`, which reads `karetaker_schema_version`: an option
 deliberately stored with `autoload = false`. Measured with `SAVEQUERIES` on a front-end
 load: **one extra `SELECT` on every request, forever**, against a stated budget of zero. The
-check now runs on `admin_init`, on the scan cron, and on `init` under WP-CLI — the only
+check now runs on `admin_init`, on the scan cron, and on `init` under WP-CLI: the only
 contexts where a schema migration can matter. Measured after: **0 queries.**
 
 Do not "fix" this by autoloading the version option instead. Autoload is a site-wide
@@ -91,10 +91,10 @@ loaded earlier.
 not run per-site on network activation.** A schema version in an option, checked in admin,
 is the only thing that reliably migrates an installed site.
 
-**`trim()` deletes by `id`, not by date, and it is called from the insert path — not from
+**`trim()` deletes by `id`, not by date, and it is called from the insert path, not from
 cron.** This is the single most important design decision in the storage layer. Wordfence
 and Solid Security both prune their log tables on WP-Cron, and both fail the same way:
-WP-Cron is traffic-driven and degrades exactly when rows accumulate fastest — under bot
+WP-Cron is traffic-driven and degrades exactly when rows accumulate fastest: under bot
 load, on a slow site, on an overloaded host. Growth rate goes up and prune reliability goes
 down at the same moment. A table that *cannot* exceed the cap never needs the prune job to
 work.
@@ -106,7 +106,7 @@ safe direction.
 
 **`count()` and `size_bytes()` are for the admin screen and WP-CLI only.** `COUNT(*)` is a
 full scan of the retention window; never call it on a front-end path, and never use it to
-decide whether to trim — that is what the id arithmetic is for.
+decide whether to trim: that is what the id arithmetic is for.
 
 ## `includes/class-events.php`
 
@@ -115,10 +115,10 @@ fixes the severity of each code in one place and makes an unknown or attacker-su
 a no-op rather than a row. Severity is never passed in by the caller.
 
 **Event codes are stored as slugs, never as translated strings.** A translated string in the
-log makes it unsearchable and locale-dependent — the same event would be two different rows
+log makes it unsearchable and locale-dependent: the same event would be two different rows
 on two sites. Translate at render.
 
-**`sanitize_context()` takes an allow-list shape, and the caller must pass named fields —
+**`sanitize_context()` takes an allow-list shape, and the caller must pass named fields -
 never `$_POST` wholesale.** All-In-One Security wrote submitted passwords in plaintext into
 its own audit log, twice per successful login, across 1M+ sites for about two months. The
 logger cannot be the thing that decides what is sensitive; the call site is. The key cap and
@@ -127,14 +127,14 @@ retention maths depends on.
 
 **`client_ip()` returns `REMOTE_ADDR` unless a trusted proxy is configured, and this is a
 security boundary, not a convenience.** A spoofable IP key does not merely let an attacker
-evade a rate limit — it lets them **write into any other visitor's counter**, so a forged
+evade a rate limit: it lets them **write into any other visitor's counter**, so a forged
 header carrying the administrator's address locks the administrator out. The brute-force
 defence becomes a denial-of-service primitive handed to the attacker. There is a CVE of
 exactly this shape: *WordPress Web Application Firewall ≤2.1.2, IP address spoofing to
 protection mechanism bypass*.
 
 Both `forwarded_header` and `trusted_proxies` must be set, **and** `REMOTE_ADDR` must fall
-inside one of the CIDRs, before any header is read. Naming the header alone does nothing —
+inside one of the CIDRs, before any header is read. Naming the header alone does nothing -
 that is the point: the header is only trustworthy because of who it came from.
 
 The opposite failure is just as real and is why the setting exists at all: behind a CDN with
@@ -146,12 +146,12 @@ independently against Wordfence, AIOS and Sucuri.
 code path and a v4-against-v6 comparison is rejected by length rather than silently matching.
 
 **IP is stored as `VARBINARY(16)`, not a string.** It holds IPv6 in the same column, and it
-keeps the row and any index on it small — the row size is what the retention cap is really
+keeps the row and any index on it small: the row size is what the retention cap is really
 budgeting.
 
 **`query()` builds its `WHERE` from a fixed set of clauses and passes every value through
 `prepare()`.** Nothing from a request reaches the SQL as a string. When the log viewer is
-built, **escape every field on output** — an unauthenticated stored XSS in the log viewer is
+built, **escape every field on output**: an unauthenticated stored XSS in the log viewer is
 the most likely bug this plugin will ever ship, because the log deliberately stores
 attacker-controlled strings (usernames, user agents, request paths). WP Cerber shipped
 exactly that bug.
@@ -172,7 +172,7 @@ this set, and an alert with nowhere to go is the same as no alert.
 ## `uninstall.php`
 
 **Uninstall must be provably total: table dropped, options deleted, cron unscheduled.**
-Unclean uninstall is its own complaint category across three of the major plugins — leftover
+Unclean uninstall is its own complaint category across three of the major plugins: leftover
 `.htaccess` entries, orphan tables, alert emails still arriving after deletion, and in one
 case leftovers that broke a host migration. One review of a competitor reads *"the plugin
 changes names if you deactivate it."*
@@ -183,7 +183,7 @@ events for the same hook can and do accumulate.
 ## Testing
 
 There is no test harness in the plugin yet. The foundation was verified with a throwaway
-script against the live local site — 27 assertions covering event codes, severity mapping,
+script against the live local site: 27 assertions covering event codes, severity mapping,
 the three IP trust cases, CIDR maths for v4 and v6, context sanitising, query round-trip,
 the row cap, and the kill switch. When this gets a real suite, those are the cases to port
 first; the IP trust cases especially, since that is the one place where a regression is a
@@ -192,8 +192,8 @@ vulnerability rather than a bug.
 ## `includes/class-hooks.php`
 
 **`$creating` is set from `wp_pre_insert_user_data` and cleared in `user_register`, and the
-ordering is the whole point.** `wp_insert_user()` calls `$user->set_role()` — which fires
-`set_user_role` — **before** it fires `user_register`. The first version set the guard inside
+ordering is the whole point.** `wp_insert_user()` calls `$user->set_role()`: which fires
+`set_user_role`: **before** it fires `user_register`. The first version set the guard inside
 `on_user_register()`, which is too late, and it failed two ways at once: creating an
 administrator logged `role_escalated` *before* `admin_user_added` (three rows for one act),
 and because the guard was a per-user array that nothing ever cleared, **every later
@@ -201,13 +201,13 @@ escalation of that user was silently suppressed forever**. Both were caught by t
 reading. `wp_pre_insert_user_data` fires before the insert and carries `$update`, so it is
 the only hook early enough.
 
-**Failed logins are logged as a burst, never individually — and this protects signal, not
+**Failed logins are logged as a burst, never individually, and this protects signal, not
 size.** The row cap keeps the table small no matter what, but it cannot keep the table
 *useful*: under a brute-force run, thousands of `login_failure_burst`-shaped rows per hour
 would evict every admin-created, file-changed and option-flipped event out of the retention
 window. The attack would erase the evidence of itself by filling the log with its own noise.
 So a transient counts attempts per IP and exactly one row is written when the threshold is
-crossed — `self::BURST_THRESHOLD !== $count` rather than `>=`, so a long attack writes one
+crossed: `self::BURST_THRESHOLD !== $count` rather than `>=`, so a long attack writes one
 row per window, not one per attempt after the tenth.
 
 The same reasoning is why there is no per-request logging anywhere in this plugin. Log
@@ -219,17 +219,17 @@ in that process.
 
 **The `update_option_*` listeners compare old to new and stay silent on a no-op**, because
 WordPress fires these for any write, not only for a change of value. Closing registration or
-setting a harmless default role records `setting_changed`, not an act-now event — only the
+setting a harmless default role records `setting_changed`, not an act-now event: only the
 dangerous direction is an alert.
 
 **A wrinkle worth knowing before the options scanner is written.** If something pins an
-option with a `pre_option_*` filter — `spice-hardening` on the Spice site pins
-`users_can_register` to `0` — then `update_option()` compares the *filtered* old value
+option with a `pre_option_*` filter: `spice-hardening` on the Spice site pins
+`users_can_register` to `0`: then `update_option()` compares the *filtered* old value
 against the new one, decides it changed, writes a row that already holds that value, gets
 zero affected rows, and returns `false` **without firing the action**. The raw database row
 can therefore sit at `1` indefinitely while the site behaves as `0`.
 
-Two consequences. The hook layer cannot see that drift at all, which is fine — behaviour is
+Two consequences. The hook layer cannot see that drift at all, which is fine: behaviour is
 what matters and the filter wins. But the **options scanner reads raw values**, so it must
 either compare against the filtered value or report the mismatch as its own finding. A raw
 `1` with a filter forcing `0` is not a compromise, and reporting it as one would be exactly
@@ -259,7 +259,7 @@ auto-loads and never appears in the Plugins screen, so it is worth the full hash
 
 **There is no whole-site file baseline in v1, deliberately.** Hashing every plugin and theme
 file means storing tens of thousands of hashes, and the storage design for that is a separate
-problem — an option would be autoload poison and a table needs its own retention thinking.
+problem: an option would be autoload poison and a table needs its own retention thinking.
 Core and WordPress.org-hosted plugins are better served by the published checksums anyway.
 Themes, premium plugins and the child theme are the genuine gap, and they are what a baseline
 store would be *for*; do that deliberately, not as a side effect.
@@ -268,8 +268,8 @@ store would be *for*; do that deliberately, not as a side effect.
 `downloads.wordpress.org/plugin-checksums/{slug}/{version}.json` returns 200 with per-file
 `md5` and `sha256`; the theme equivalent 404s. Core has its own endpoint
 (`api.wordpress.org/core/checksums/1.0/`, md5 only). **The per-file value is sometimes a
-string and sometimes an array** — an array when a file legitimately has several accepted
-hashes across point releases — so any comparison must handle both or it will report false
+string and sometimes an array**: an array when a file legitimately has several accepted
+hashes across point releases: so any comparison must handle both or it will report false
 mismatches on perfectly clean installs.
 
 **`scan_uploads()` resumes by index, and the cursor resets only on a completed pass.** A
@@ -280,7 +280,7 @@ replace the list, which is what makes "this file is gone now" trustworthy.
 **`scan_cron()` requires a hook to be seen orphaned on two consecutive scans before it is
 reported, and this is the false-positive guard.** Cron runs on a front-end request, so any
 plugin that registers its callback only in the admin looks orphaned from there. Measured on
-the Spice site: 25 scheduled hooks, 2 flagged — `wpseo-reindex`, which is Yoast registering
+the Spice site: 25 scheduled hooks, 2 flagged: `wpseo-reindex`, which is Yoast registering
 conditionally and is a **false positive**, and
 `elementor_one/image_optimizer_license_info_hook`, which is a **true positive** left behind
 by a plugin that has been deleted from disk.
@@ -297,13 +297,13 @@ what spends the credibility of the high-precision ones.
 baselines against the filtered one.** See the `update_option` wrinkle in the hooks section:
 an option pinned by a `pre_option_*` filter can leave a stale raw row that never matches
 behaviour. The mismatch is recorded in `options_masked` for the dashboard to show as context,
-and is deliberately **not** an alert — a raw `1` with a filter forcing `0` is a correctly
+and is deliberately **not** an alert: a raw `1` with a filter forcing `0` is a correctly
 hardened site, and calling that a compromise is exactly the false positive this plugin exists
 to avoid.
 
 **`scan_muplugins()` returns `baseline_taken` on first sight and never alerts on it.** A
 plugin installed onto an already-compromised site would otherwise bless the backdoor as the
-baseline — which is a real limitation, not a solved problem. The checksum scan is what
+baseline: which is a real limitation, not a solved problem. The checksum scan is what
 catches pre-existing tampering; the baseline only catches change from now on. Both are needed
 and neither replaces the other.
 
@@ -316,7 +316,7 @@ two are complementary and neither replaces the other.
 
 **Per-file hashes are sometimes a string and sometimes an array**, and `hash_matches()` exists
 solely because of that. WordPress.org lists several accepted hashes for a file that changed
-legitimately across point releases — `readme.txt` most often. Comparing a string against the
+legitimately across point releases: `readme.txt` most often. Comparing a string against the
 array directly would report a false mismatch on a perfectly clean install. `hash_equals()`
 rather than `===` because this is a hash comparison and constant time costs nothing here.
 
@@ -324,7 +324,7 @@ rather than `===` because this is a hash comparison and constant time costs noth
 **2,425 WordPress core files** as unknown, all at High severity, because its mirror of the
 core release "did not complete normally and stopped halfway". An admin with 200+ client sites
 wrote that it *"caused such a panic on our end"*, and users ended up verifying core against
-GitHub themselves — doing the scanner's job for it.
+GitHub themselves: doing the scanner's job for it.
 
 So: if more than 20% of checked files mismatch, or more than 25 mismatch with nothing checked,
 the **check is more likely broken than the site**. That case records a `scan_ran` row noting
@@ -335,14 +335,14 @@ ratio.
 **Core verification is resumable, and this was a real flaw before it was fixed.** Measured:
 3,338 core files take **2.81s cold** and **0.668s warm**. On a slow shared host that can exceed
 the whole scan budget, and the first version simply returned `partial`, never set
-`core_verified`, and started from the beginning on the next run — **retrying forever and never
+`core_verified`, and started from the beginning on the next run: **retrying forever and never
 reporting anything**. It now carries `core_offset`, `core_carry` (mismatches found so far) and
 `core_checked` between runs. Verified by driving it with a 0.02s deadline: 10 partial passes,
 then complete, with `checked` totalling exactly the same 3,338 as an uninterrupted run.
 
 **`core_checked` has to carry, not just the mismatch list.** Without it a resumed run would
 finish reporting a handful of files checked against a full list of accumulated mismatches, and
-`looks_broken()` would suppress a genuine finding on a bogus ratio — the sanity guard would
+`looks_broken()` would suppress a genuine finding on a bogus ratio: the sanity guard would
 become the bug.
 
 **`wp-content/` entries in the core manifest are skipped.** The core package ships default
@@ -374,12 +374,12 @@ byte-identical.
 **A Guard trip is transition-only: bad ∧ ¬was_bad, never a sticky re-fire.** `evaluate()`
 compares the new condition against the flag stored in `karetaker_scan_state['guard'][$check]`
 and only calls `Karetaker_Events::record( 'guard_tripped', … )` on the rising edge. Once a
-check is already bad, cron and hooks keep refreshing `bad` / `since` but write no more rows —
+check is already bad, cron and hooks keep refreshing `bad` / `since` but write no more rows -
 otherwise a discouraged-search-engines site would emit `guard_tripped` on every scan forever
 and burn the ACT alert budget on noise. Clearing the condition resets the edge so a later
 re-trip is a real new event.
 
-**Mail is `wp_mail_failed` only — not a successful send, not SMTP probes, not a custom
+**Mail is `wp_mail_failed` only, not a successful send, not SMTP probes, not a custom
 transport.** The research failure mode was plugins that treat "we tried mail" as evidence and
 then spam the owner whenever the host's mailer is merely slow. Hooking the failure action
 means the check lights up when WordPress itself reports that delivery failed, and the sticky
@@ -389,7 +389,7 @@ event still fires only once, via the same transition rule.
 **Administrator absence is counted by capability (`manage_options`), not by the
 `administrator` role slug alone.** A site that renames or splits the role still has someone
 who can recover it; counting capability matches how the rest of WordPress decides who is an
-admin. The count is capped at two in the query — we only need "zero vs at least one".
+admin. The count is capped at two in the query: we only need "zero vs at least one".
 
 ## `includes/class-alerts.php`
 
@@ -400,14 +400,14 @@ two layers drift. Severity is checked first: only `SEVERITY_ACT` can mail.
 
 **Dedupe is a 24-hour transient keyed on `md5( code | json(context) )`, set only after
 `wp_mail` reports success.** A failed send must be allowed to retry; a successful one must
-not mail again for the same shape within a day — that is the whole scarcity model. Context is
+not mail again for the same shape within a day: that is the whole scarcity model. Context is
 `ksort`'d before hashing so key order cannot create two identities for one fact. The kill
 switch is checked again here even though `record()` already bails when disabled, because an
 event recorded *before* the file appeared could still be mid-flight in the same request.
 
 **The body reuses `Karetaker_Guidance::for_event()` for summary, numbered next steps, and a
-deep link**, then appends technical JSON and a link into Activity. Same copy as the drawer —
-Tell and the UI cannot drift. There is no separate unsubscribe token or public endpoint —
+deep link**, then appends technical JSON and a link into Activity. Same copy as the drawer -
+Tell and the UI cannot drift. There is no separate unsubscribe token or public endpoint -
 that would be a new attack surface for a plugin whose job is to shrink surface area. Settings
 copy is enough for a site the owner can still reach; if they cannot reach it, the kill-switch
 file is the out-of-band path.
@@ -420,7 +420,7 @@ keys the owner has set to true. A fresh install therefore ships zero Harden filt
 
 **No CSP.** Headers send nosniff, SAMEORIGIN frame, referrer, permissions-policy, and HSTS
 only when `is_ssl()` and the environment is not `local`. Content-Security-Policy is left to
-the host or a dedicated plugin — a wrong CSP locks the admin UI and that is not this plugin's
+the host or a dedicated plugin: a wrong CSP locks the admin UI and that is not this plugin's
 job.
 
 **Registration is closed with `pre_option_users_can_register`, not `update_option`.** Writing
@@ -433,7 +433,7 @@ already set the constant, Harden does not redefine it (PHP would fatal). Live no
 `Blocked by host/wp-config` when Desired is off but the constant is already true.
 
 **Idempotent with `spice-hardening` (and similar mu-plugins).** Double-disabling XML-RPC,
-double-closing registration via `pre_option_*`, or sending the same headers twice is safe —
+double-closing registration via `pre_option_*`, or sending the same headers twice is safe -
 Harden never assumes it is the only actor and never writes server config files.
 
 **Probes are derived each render, never stored.** There is no “protected” score in settings;
@@ -448,7 +448,7 @@ CLI can read Desired and explain inactivity.
 
 **One snapshot builder for CLI and the agency REST route.** Both callers need the same fact
 shape; duplicating the guard normalisation / ACT-week count / events totals would drift.
-`snapshot()` returns the payload **without** `sig` — CLI prints it as-is; HTTP adds HMAC
+`snapshot()` returns the payload **without** `sig`: CLI prints it as-is; HTTP adds HMAC
 in `Karetaker_Agency::get_status()`.
 
 **Guard entries are reduced to `bad` + `since` only.** The scanner state can hold extra keys;
@@ -458,7 +458,7 @@ the agency channel is a monitoring digest, not a dump of internal state.
 
 **Empty `agency_token` means the channel is off.** `permission_callback` returns false with
 no route-side hints; WordPress maps that to a generic forbidden (401/403). The route still
-registers when the token is empty — fail-closed auth, not conditional registration — so a
+registers when the token is empty: fail-closed auth, not conditional registration: so a
 poller always hits the same URL.
 
 **Auth accepts Bearer first, then `?token=`.** Neither path runs the token through
@@ -473,7 +473,7 @@ tampered body from a cache or proxy.
 **HTTP never writes to the event log.** A status poll is traffic, not an incident; logging
 it would fill the retention window the same way per-request login logging would. Admin
 token lifecycle alone records `setting_changed` with `value=generated|regenerated|cleared`
-— never the raw secret.
+- never the raw secret.
 
 **Kill switch skips `Karetaker_Agency::init()`** (boot returns early), so the route is
 absent (REST 404) while disabled. Contrast empty-token (route present, auth fails).
@@ -492,7 +492,7 @@ etc.). JSON stays under a collapsed “Technical details” block.
 
 ## Pro admin UI (2026-09-13)
 
-**Custom app shell under `.karetaker-app` / `.kt-shell`** — watchtower tokens, pill nav, posture metrics, partials in `includes/admin/partials/`. Not wp-admin `nav-tab` / `widefat` styling. Assets: `assets/admin.css`, `assets/admin.js`, `menu-icon.svg` (shipped in dist zip).
+**Custom app shell under `.karetaker-app` / `.kt-shell`**: watchtower tokens, pill nav, posture metrics, partials in `includes/admin/partials/`. Not wp-admin `nav-tab` / `widefat` styling. Assets: `assets/admin.css`, `assets/admin.js`, `menu-icon.svg` (shipped in dist zip).
 
 **Overview:** Run scan (`admin_post_karetaker_run_scan` → `Karetaker_Scanner::run()`), next cron time, Site Health link, slice list.
 
@@ -506,7 +506,7 @@ etc.). JSON stays under a collapsed “Technical details” block.
 
 **Top-level menu at position 80 (`add_menu_page`), not Tools.** Position 80 sits near Plugins /
 Tools so agencies can find it without another top-of-sidebar badge. Capability stays
-`manage_options` end to end — menu, render, and `admin_post` save — and save handlers check
+`manage_options` end to end: menu, render, and `admin_post` save, and save handlers check
 the nonce before touching settings. Internal links and redirects use
 `admin_page_url()` → `admin.php?page=karetaker`. Legacy `tools.php?page=karetaker`
 bookmarks soft-redirect on `admin_init`.
@@ -516,7 +516,7 @@ tagline. Footer: `Karetaker v{version} · by Team Krikir` on every tab (no About
 Overview carries the product intro card and status grid; kill-switch notice shows there too.
 
 **Admin CSS only on our hook.** `enqueue_assets()` loads `assets/admin.css` when
-`$hook === toplevel_page_karetaker`. No front-end enqueue anywhere — logged-out home stays
+`$hook === toplevel_page_karetaker`. No front-end enqueue anywhere: logged-out home stays
 zero plugin assets. Directory marketing PNGs (`banner-*`, `icon-*`, `screenshot-*`) stay out
 of the plugin zip via `.distignore` / `build-dist.sh`; `admin.css` and `menu-icon.svg` ship.
 
@@ -538,12 +538,12 @@ UI-only and has no business on that path.
 **Severity renders as Log / Watch / Act-now badges** mapped from `SEVERITY_LOG` /
 `SEVERITY_ATTENTION` / `SEVERITY_ACT`. Context shows a short key=value summary from known
 keys; full JSON stays on the `title` attribute only. Cell text still goes through `esc_html`
-/ `esc_attr` — the activity log stores attacker-controlled strings; an unescaped viewer is
+/ `esc_attr`: the activity log stores attacker-controlled strings; an unescaped viewer is
 the most likely XSS this plugin will ever ship (see the events section). Severity and user
 id are cast before escape so a weird DB type cannot slip markup through.
 
 **The User column is the numeric `user_id`, not a display name.** Resolving logins on every
 row would add per-page user lookups to a screen that already runs `COUNT(*)` for pagination,
 and a deleted user would leave a blank that looks like a bug. Filters (severity, code, date)
-are deferred — v1 is newest-first, page size 20, unfiltered `Karetaker_Schema::count()` —
+are deferred: v1 is newest-first, page size 20, unfiltered `Karetaker_Schema::count()` -
 because shipping the escape-correct table mattered more than shipping a query UI on top of it.

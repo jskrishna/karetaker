@@ -1,4 +1,4 @@
-# Karetaker Pro Admin — design
+# Karetaker Pro Admin: design
 
 Date: 2026-09-13  
 Status: **approved in conversation** (stack A: PHP + CSS + vanilla JS; phased delivery one-by-one)  
@@ -8,18 +8,18 @@ Parent: `docs/design.md` (product thesis unchanged)
 
 ## Goal
 
-Make Karetaker feel like a **professional security product** in wp-admin: owned layout, clear hierarchy, agency-grade Activity ops, and Overview that answers “is this site OK?” — **without** becoming a WAF, signature scanner, or login-lockout plugin.
+Make Karetaker feel like a **professional security product** in wp-admin: owned layout, clear hierarchy, agency-grade Activity ops, and Overview that answers “is this site OK?”: **without** becoming a WAF, signature scanner, or login-lockout plugin.
 
 ## Locked decisions
 
 | Topic | Choice |
 |---|---|
-| Delivery | **Phased** — ship and review each phase before the next |
-| Admin stack | **PHP templates + CSS design system + vanilla JS** — no React, no bundler |
+| Delivery | **Phased**: ship and review each phase before the next |
+| Admin stack | **PHP templates + CSS design system + vanilla JS**: no React, no bundler |
 | Menu | Top-level `add_menu_page`, position ~80, slug `karetaker` |
 | Legacy URL | `tools.php?page=karetaker` → `admin.php?page=karetaker` (keep) |
 | Push channel | Email on **ACT only** (unchanged); Phase 6 webhooks **ACT-only, opt-in** |
-| Credits | Small footer on every tab — Team Krikir; no About tab |
+| Credits | Small footer on every tab: Team Krikir; no About tab |
 | Front-end | **Zero** plugin CSS/JS on public site (admin-only assets) |
 
 ## Product boundaries (unchanged)
@@ -49,7 +49,7 @@ Still **out of scope** unless product thesis is explicitly reopened:
 | `--kt-radius` | Cards, buttons | `10px` |
 | `--kt-shadow` | Panels | `0 1px 2px rgba(20,20,20,.06), 0 8px 24px rgba(20,20,20,.04)` |
 
-Typography: system UI stack (`-apple-system`, `Segoe UI`, etc.) — no external font CDN (wp.org friendly).
+Typography: system UI stack (`-apple-system`, `Segoe UI`, etc.): no external font CDN (wp.org friendly).
 
 **Isolation:** All rules live under `.karetaker-app` (or `.karetaker-wrap.karetaker-app`) so we do not restyle global wp-admin. Hide reliance on `widefat`, `nav-tab-wrapper`, and `#wpbody-content .wrap` defaults inside our shell.
 
@@ -58,7 +58,7 @@ Typography: system UI stack (`-apple-system`, `Segoe UI`, etc.) — no external 
 ### Render surface
 
 - **`Karetaker_Admin`** remains orchestrator: tabs, save handlers, nonces, capabilities.
-- **Partials** (new): `includes/admin/partials/` — `shell-header.php`, `shell-nav.php`, `shell-footer.php`, per-tab bodies as needed.
+- **Partials** (new): `includes/admin/partials/`: `shell-header.php`, `shell-nav.php`, `shell-footer.php`, per-tab bodies as needed.
 - **`Karetaker_List_Table`** stays for Activity Phase 3 baseline; may gain filter args or yield to custom table markup in same phase if list table fights the design (prefer extending query + custom `display()` wrapper first).
 
 ### Assets
@@ -74,8 +74,8 @@ Enqueue only on `toplevel_page_karetaker`. Version via `filemtime`.
 ### Routing
 
 - Tabs: `admin.php?page=karetaker&tab={overview|activity|harden|settings}` (unchanged).
-- Activity filters: **GET query args** (bookmarkable, no AJAX required): e.g. `severity`, `code`, `since`, `until`, `paged`, `s` (search — Phase 3).
-- New actions: `admin_post_karetaker_run_scan` (Phase 2) — nonce + `manage_options`, then redirect back to Overview with `scan=started` or results flash.
+- Activity filters: **GET query args** (bookmarkable, no AJAX required): e.g. `severity`, `code`, `since`, `until`, `paged`, `s` (search: Phase 3).
+- New actions: `admin_post_karetaker_run_scan` (Phase 2): nonce + `manage_options`, then redirect back to Overview with `scan=started` or results flash.
 
 ### Security (all phases)
 
@@ -85,7 +85,7 @@ Enqueue only on `toplevel_page_karetaker`. Version via `filemtime`.
 
 ---
 
-## Phase 1 — Custom shell
+## Phase 1: Custom shell
 
 **Outcome:** Page reads as **Karetaker**, not “Settings with cards”.
 
@@ -116,13 +116,13 @@ Enqueue only on `toplevel_page_karetaker`. Version via `filemtime`.
 
 ---
 
-## Phase 2 — Overview command centre
+## Phase 2: Overview command centre
 
 **Outcome:** Owner answers health in one screen.
 
 ### UI
 
-- **Posture strip:** Guard bad count, ACT count (7d), last scan age, agency on/off — visual status (ok / attention / act).
+- **Posture strip:** Guard bad count, ACT count (7d), last scan age, agency on/off: visual status (ok / attention / act).
 - **Run scan now** button → `admin_post_karetaker_run_scan` → calls `Karetaker_Scanner::run()` (same as CLI).
 - Last scan: human-relative time (“2 hours ago”) + UTC tooltip.
 - Per-slice results from last run (muplugins, uploads, …) as compact status list with icons/colours.
@@ -141,7 +141,7 @@ Enqueue only on `toplevel_page_karetaker`. Version via `filemtime`.
 
 ---
 
-## Phase 3 — Activity pro
+## Phase 3: Activity pro
 
 **Outcome:** Audit log agencies can actually use.
 
@@ -160,7 +160,7 @@ Enqueue only on `toplevel_page_karetaker`. Version via `filemtime`.
 
 ### Export
 
-- `admin_post_karetaker_export_events` or GET with nonce: CSV of filtered result set (cap 5000 rows) — same filters as list.
+- `admin_post_karetaker_export_events` or GET with nonce: CSV of filtered result set (cap 5000 rows): same filters as list.
 
 ### User display
 
@@ -174,7 +174,7 @@ Enqueue only on `toplevel_page_karetaker`. Version via `filemtime`.
 
 ---
 
-## Phase 4 — Harden & Settings UX
+## Phase 4: Harden & Settings UX
 
 **Outcome:** Toggles feel intentional, not a spreadsheet.
 
@@ -196,7 +196,7 @@ Enqueue only on `toplevel_page_karetaker`. Version via `filemtime`.
 
 ---
 
-## Phase 5 — Ops & trust
+## Phase 5: Ops & trust
 
 **Outcome:** “Is Karetaker running?” is verifiable.
 
@@ -217,7 +217,7 @@ Enqueue only on `toplevel_page_karetaker`. Version via `filemtime`.
 
 ---
 
-## Phase 6 — Agency+ (optional, last)
+## Phase 6: Agency+ (optional, last)
 
 **Outcome:** Agencies integrate without a control plane.
 
@@ -234,18 +234,18 @@ Enqueue only on `toplevel_page_karetaker`. Version via `filemtime`.
 ### Out of scope for Phase 6
 
 - Multisite network admin UI (defer unless requested)
-- Slack OAuth app — webhook URL only
+- Slack OAuth app: webhook URL only
 
 ---
 
 ## Implementation order (one by one)
 
-1. Phase 1 — Custom shell (replace WP-native styling from interim admin UI work)
-2. Phase 2 — Overview command centre
-3. Phase 3 — Activity pro
-4. Phase 4 — Harden & Settings UX
-5. Phase 5 — Ops & trust
-6. Phase 6 — Agency+ (optional)
+1. Phase 1: Custom shell (replace WP-native styling from interim admin UI work)
+2. Phase 2: Overview command centre
+3. Phase 3: Activity pro
+4. Phase 4: Harden & Settings UX
+5. Phase 5: Ops & trust
+6. Phase 6: Agency+ (optional)
 
 Each phase: implementation plan → build → Local smoke → user sign-off → next.
 
