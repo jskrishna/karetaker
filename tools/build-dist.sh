@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+STAGE_ROOT="$(mktemp -d)"
+STAGE="$STAGE_ROOT/karetaker"
+VERSION="$(grep -E "^\s*\* Version:" "$ROOT/karetaker.php" | head -1 | sed -E 's/.*Version:[[:space:]]*//')"
+OUT="${1:-$ROOT/dist/karetaker-${VERSION}.zip}"
+mkdir -p "$(dirname "$OUT")" "$STAGE"
+
+rsync -a \
+  --exclude='.*' \
+  --exclude='*.md' \
+  --exclude='vendor' \
+  --exclude='node_modules' \
+  --exclude='composer.json' \
+  --exclude='composer.lock' \
+  --exclude='phpcs.xml.dist' \
+  --exclude='phpcs.xml' \
+  --exclude='docs' \
+  --exclude='tools' \
+  --exclude='tests' \
+  --exclude='dist' \
+  --exclude='assets/banner-*.png' \
+  --exclude='assets/icon-*.png' \
+  --exclude='assets/icon.svg' \
+  --exclude='assets/logo-*.png' \
+  --exclude='assets/screenshot-*.png' \
+  "$ROOT/" "$STAGE/"
+
+python3 - "$STAGE/karetaker.php" <<'PY'
+from pathlib import Path
+import sys
+p = Path(sys.argv[1])
+p.write_text("".join(L for L in p.read_text().splitlines(True) if "Update URI" not in L))
+PY
+
+grep -q "Plugin Name: Karetaker" "$STAGE/karetaker.php"
+if grep -q "Update URI" "$STAGE/karetaker.php"; then
+  echo "Update URI still present in staged file" >&2
+  exit 1
+fi
+
+rm -f "$OUT"
+(
+  cd "$STAGE_ROOT"
+  zip -rq "$OUT" karetaker
+)
+rm -rf "$STAGE_ROOT"
+echo "Wrote $OUT"
+unzip -l "$OUT" | head -30
+echo "--- header ---"
+unzip -p "$OUT" karetaker/karetaker.php | head -15
