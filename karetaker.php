@@ -3,7 +3,7 @@
  * Plugin Name: Karetaker
  * Plugin URI:  https://wordpress.org/plugins/karetaker/
  * Description: Watches a WordPress site for compromise signals and tells the owner only when something needs them.
- * Version:     1.0.1
+ * Version:     1.0.2
  * Author:      Team Krikir
  * Author URI:  https://www.krikir.com/
  * License:     GPLv2 or later
@@ -20,10 +20,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'KARETAKER_VERSION', '1.0.1' );
+define( 'KARETAKER_VERSION', '1.0.2' );
 define( 'KARETAKER_FILE', __FILE__ );
 define( 'KARETAKER_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KARETAKER_SLUG', 'karetaker' );
+define( 'KARETAKER_API', 1 );
 
 /**
  * Whether the kill switch is engaged.
@@ -130,6 +131,14 @@ function karetaker_boot() {
 		Karetaker_Admin::init();
 		Karetaker_Site_Health::init();
 	}
+
+	/**
+	 * Fires after Karetaker has booted, so add-ons can extend it.
+	 *
+	 * @since 1.0.2
+	 * @param int $api Extension API version.
+	 */
+	do_action( 'karetaker_loaded', KARETAKER_API );
 }
 add_action( 'plugins_loaded', 'karetaker_boot' );
 

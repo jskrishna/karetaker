@@ -23,10 +23,6 @@ class Karetaker_Admin {
 
 	const PAGE_SLUG = 'karetaker';
 
-	const SIMPLE_TABS = array( 'home', 'activity', 'protection', 'settings' );
-
-	const ADVANCED_TABS = array( 'issues', 'monitoring', 'incidents', 'reports', 'access' );
-
 	/**
 	 * Data handed to admin.js (issues and events shown in the side panels).
 	 *
@@ -115,61 +111,70 @@ class Karetaker_Admin {
 		wp_localize_script(
 			'karetaker-admin',
 			'karetakerL10n',
-			array(
-				'saved'         => __( 'Saved.', 'karetaker' ),
-				'error'         => __( 'That didn’t work. Please try again.', 'karetaker' ),
-				'checking'      => __( 'Checking…', 'karetaker' ),
-				'checkDone'     => __( 'Check finished.', 'karetaker' ),
-				'setupDone'     => __( 'You’re set. Karetaker is now watching your site.', 'karetaker' ),
-				/* translators: %d: number of things found */
-				'foundSome'     => __( 'We found %d things to look at.', 'karetaker' ),
-				'foundOne'      => __( 'We found 1 thing to look at.', 'karetaker' ),
-				'foundNone'     => __( 'Nothing needs you right now.', 'karetaker' ),
-				'foundSub'      => __( 'We’ll show you exactly what to do on the Home screen.', 'karetaker' ),
-				'noneSub'       => __( 'Karetaker keeps watching in the background.', 'karetaker' ),
-				'ok'            => __( 'OK', 'karetaker' ),
-				'finish'        => __( 'Finish', 'karetaker' ),
-				'continue'      => __( 'Continue', 'karetaker' ),
-				'mine'          => __( 'Got it. We won’t flag this change again.', 'karetaker' ),
-				'fixed'         => __( 'Marked as fixed. We’ll confirm on the next check.', 'karetaker' ),
-				'expected'      => __( 'Marked as expected. This is now the baseline.', 'karetaker' ),
-				'acked'         => __( 'Issue acknowledged.', 'karetaker' ),
-				'resolved'      => __( 'Issue resolved.', 'karetaker' ),
-				'reopened'      => __( 'Issue reopened.', 'karetaker' ),
-				'ownerSet'      => __( 'Owner saved.', 'karetaker' ),
-				'advOn'         => __( 'Advanced mode on. New tabs added.', 'karetaker' ),
-				'advOff'        => __( 'Advanced mode off.', 'karetaker' ),
-				'paused'        => __( 'Alerts paused for 1 hour. Everything is still recorded.', 'karetaker' ),
-				'resumed'       => __( 'Alerts resumed.', 'karetaker' ),
-				/* translators: %s: destination name */
-				'connected'     => __( '%s connected.', 'karetaker' ),
-				/* translators: %s: destination name */
-				'removed'       => __( '%s removed.', 'karetaker' ),
-				/* translators: %s: destination names */
-				'testSent'      => __( 'Test alert sent to %s.', 'karetaker' ),
-				'testNone'      => __( 'No test alert was sent. Connect a destination and turn on a rule first.', 'karetaker' ),
-				'signedOut'     => __( 'Signed out.', 'karetaker' ),
-				'signedOutAll'  => __( 'Every other administrator session was signed out.', 'karetaker' ),
-				'caseOpened'    => __( 'Incident opened.', 'karetaker' ),
-				'caseClosed'    => __( 'Incident closed.', 'karetaker' ),
-				/* translators: 1: steps done, 2: total steps */
-				'stepsDone'     => __( '%1$d of %2$d steps done', 'karetaker' ),
-				'tokenRevoked'  => __( 'Token revoked.', 'karetaker' ),
-				'confirmRevoke' => __( 'Revoke this token? Anything using it stops working.', 'karetaker' ),
-				'confirmAll'    => __( 'Sign out every administrator everywhere, except you here?', 'karetaker' ),
-				'viewName'      => __( 'Name this view', 'karetaker' ),
-				/* translators: %d: number of events */
-				'marked'        => __( '%d marked as expected.', 'karetaker' ),
-				'chooseLogo'    => __( 'Choose a logo', 'karetaker' ),
-				'copied'        => __( 'Copied.', 'karetaker' ),
-				'sevAct'        => __( 'Act now', 'karetaker' ),
-				'sevReview'     => __( 'Review', 'karetaker' ),
-				'sevLog'        => __( 'Logged', 'karetaker' ),
-				'stOpen'        => __( 'Open', 'karetaker' ),
-				'stAck'         => __( 'Acknowledged', 'karetaker' ),
-				'stResolved'    => __( 'Resolved', 'karetaker' ),
-				'stExpected'    => __( 'Expected', 'karetaker' ),
-				'stClosed'      => __( 'Closed', 'karetaker' ),
+			/**
+			 * Filters the strings handed to the admin scripts.
+			 *
+			 * @since 1.0.2
+			 * @param array $strings Key => translated string.
+			 */
+			apply_filters(
+				'karetaker_admin_l10n',
+				array(
+					'saved'         => __( 'Saved.', 'karetaker' ),
+					'error'         => __( 'That didn’t work. Please try again.', 'karetaker' ),
+					'checking'      => __( 'Checking…', 'karetaker' ),
+					'checkDone'     => __( 'Check finished.', 'karetaker' ),
+					'setupDone'     => __( 'You’re set. Karetaker is now watching your site.', 'karetaker' ),
+					/* translators: %d: number of things found */
+					'foundSome'     => __( 'We found %d things to look at.', 'karetaker' ),
+					'foundOne'      => __( 'We found 1 thing to look at.', 'karetaker' ),
+					'foundNone'     => __( 'Nothing needs you right now.', 'karetaker' ),
+					'foundSub'      => __( 'We’ll show you exactly what to do on the Home screen.', 'karetaker' ),
+					'noneSub'       => __( 'Karetaker keeps watching in the background.', 'karetaker' ),
+					'ok'            => __( 'OK', 'karetaker' ),
+					'finish'        => __( 'Finish', 'karetaker' ),
+					'continue'      => __( 'Continue', 'karetaker' ),
+					'mine'          => __( 'Got it. We won’t flag this change again.', 'karetaker' ),
+					'fixed'         => __( 'Marked as fixed. We’ll confirm on the next check.', 'karetaker' ),
+					'expected'      => __( 'Marked as expected. This is now the baseline.', 'karetaker' ),
+					'acked'         => __( 'Issue acknowledged.', 'karetaker' ),
+					'resolved'      => __( 'Issue resolved.', 'karetaker' ),
+					'reopened'      => __( 'Issue reopened.', 'karetaker' ),
+					'ownerSet'      => __( 'Owner saved.', 'karetaker' ),
+					'advOn'         => __( 'Advanced mode on. New tabs added.', 'karetaker' ),
+					'advOff'        => __( 'Advanced mode off.', 'karetaker' ),
+					'paused'        => __( 'Alerts paused for 1 hour. Everything is still recorded.', 'karetaker' ),
+					'resumed'       => __( 'Alerts resumed.', 'karetaker' ),
+					/* translators: %s: destination name */
+					'connected'     => __( '%s connected.', 'karetaker' ),
+					/* translators: %s: destination name */
+					'removed'       => __( '%s removed.', 'karetaker' ),
+					/* translators: %s: destination names */
+					'testSent'      => __( 'Test alert sent to %s.', 'karetaker' ),
+					'testNone'      => __( 'No test alert was sent. Connect a destination and turn on a rule first.', 'karetaker' ),
+					'signedOut'     => __( 'Signed out.', 'karetaker' ),
+					'signedOutAll'  => __( 'Every other administrator session was signed out.', 'karetaker' ),
+					'caseOpened'    => __( 'Incident opened.', 'karetaker' ),
+					'caseClosed'    => __( 'Incident closed.', 'karetaker' ),
+					/* translators: 1: steps done, 2: total steps */
+					'stepsDone'     => __( '%1$d of %2$d steps done', 'karetaker' ),
+					'tokenRevoked'  => __( 'Token revoked.', 'karetaker' ),
+					'confirmRevoke' => __( 'Revoke this token? Anything using it stops working.', 'karetaker' ),
+					'confirmAll'    => __( 'Sign out every administrator everywhere, except you here?', 'karetaker' ),
+					'viewName'      => __( 'Name this view', 'karetaker' ),
+					/* translators: %d: number of events */
+					'marked'        => __( '%d marked as expected.', 'karetaker' ),
+					'chooseLogo'    => __( 'Choose a logo', 'karetaker' ),
+					'copied'        => __( 'Copied.', 'karetaker' ),
+					'sevAct'        => __( 'Act now', 'karetaker' ),
+					'sevReview'     => __( 'Review', 'karetaker' ),
+					'sevLog'        => __( 'Logged', 'karetaker' ),
+					'stOpen'        => __( 'Open', 'karetaker' ),
+					'stAck'         => __( 'Acknowledged', 'karetaker' ),
+					'stResolved'    => __( 'Resolved', 'karetaker' ),
+					'stExpected'    => __( 'Expected', 'karetaker' ),
+					'stClosed'      => __( 'Closed', 'karetaker' ),
+				)
 			)
 		);
 	}
@@ -229,6 +234,64 @@ class Karetaker_Admin {
 	}
 
 	/**
+	 * Screens Karetaker can show, including any added by add-ons.
+	 *
+	 * @since 1.0.2
+	 * @param bool $refresh Rebuild instead of using the cached list.
+	 * @return array<string, array{label: string, cap: string, file: string, group: string}>
+	 */
+	public static function tabs( $refresh = false ) {
+		static $tabs = null;
+		if ( null !== $tabs && ! $refresh ) {
+			return $tabs;
+		}
+		$tabs = array(
+			'home'       => self::tab_entry( __( 'Home', 'karetaker' ), 'karetaker_view', 'home', 'main' ),
+			'activity'   => self::tab_entry( __( 'Activity', 'karetaker' ), 'karetaker_view_log', 'activity', 'main' ),
+			'protection' => self::tab_entry( __( 'Protection', 'karetaker' ), 'manage_options', 'protection', 'main' ),
+			'settings'   => self::tab_entry( __( 'Settings', 'karetaker' ), 'manage_options', 'settings', 'main' ),
+		);
+		if ( self::advanced() ) {
+			$tabs += array(
+				'issues'     => self::tab_entry( __( 'Issues', 'karetaker' ), 'karetaker_view', 'issues', 'pro' ),
+				'monitoring' => self::tab_entry( __( 'Monitoring', 'karetaker' ), 'manage_options', 'monitoring', 'pro' ),
+				'incidents'  => self::tab_entry( __( 'Incidents', 'karetaker' ), 'karetaker_resolve', 'incidents', 'pro' ),
+				'reports'    => self::tab_entry( __( 'Reports', 'karetaker' ), 'manage_options', 'reports', 'pro' ),
+				'access'     => self::tab_entry( __( 'Access & API', 'karetaker' ), 'manage_options', 'access', 'pro' ),
+			);
+		}
+
+		/**
+		 * Filters the Karetaker screens.
+		 *
+		 * @since 1.0.2
+		 * @param array $tabs Slug => label, cap, file (absolute path), group ('main' or 'pro').
+		 */
+		$tabs = (array) apply_filters( 'karetaker_admin_tabs', $tabs );
+
+		return $tabs;
+	}
+
+	/**
+	 * One built-in screen for the tab list.
+	 *
+	 * @since 1.0.2
+	 * @param string $label   Menu label.
+	 * @param string $cap     Capability needed.
+	 * @param string $partial Partial file name without .php.
+	 * @param string $group   'main' or 'pro'.
+	 * @return array{label: string, cap: string, file: string, group: string}
+	 */
+	private static function tab_entry( $label, $cap, $partial, $group ) {
+		return array(
+			'label' => $label,
+			'cap'   => $cap,
+			'file'  => KARETAKER_DIR . 'includes/admin/partials/' . $partial . '.php',
+			'group' => $group,
+		);
+	}
+
+	/**
 	 * Capability each screen needs.
 	 *
 	 * @since 1.0.0
@@ -236,18 +299,8 @@ class Karetaker_Admin {
 	 * @return string
 	 */
 	private static function tab_cap( $tab ) {
-		$caps = array(
-			'home'       => 'karetaker_view',
-			'activity'   => 'karetaker_view_log',
-			'issues'     => 'karetaker_view',
-			'incidents'  => 'karetaker_resolve',
-			'protection' => 'manage_options',
-			'settings'   => 'manage_options',
-			'monitoring' => 'manage_options',
-			'reports'    => 'manage_options',
-			'access'     => 'manage_options',
-		);
-		return isset( $caps[ $tab ] ) ? $caps[ $tab ] : 'manage_options';
+		$tabs = self::tabs();
+		return isset( $tabs[ $tab ]['cap'] ) ? (string) $tabs[ $tab ]['cap'] : 'manage_options';
 	}
 
 	/**
@@ -269,8 +322,8 @@ class Karetaker_Admin {
 		if ( isset( $legacy[ $tab ] ) ) {
 			$tab = $legacy[ $tab ];
 		}
-		$allowed = self::advanced() ? array_merge( self::SIMPLE_TABS, self::ADVANCED_TABS ) : self::SIMPLE_TABS;
-		if ( ! in_array( $tab, $allowed, true ) || ! current_user_can( self::tab_cap( $tab ) ) ) {
+		$tabs = self::tabs();
+		if ( ! isset( $tabs[ $tab ]['file'] ) || ! current_user_can( self::tab_cap( $tab ) ) ) {
 			return 'home';
 		}
 		return $tab;
@@ -317,7 +370,8 @@ class Karetaker_Admin {
 		$tab   = self::current_tab();
 		$home  = self::home_model();
 		$setup = self::show_setup();
-		$adv   = ! $setup && in_array( $tab, self::ADVANCED_TABS, true );
+		$tabs  = self::tabs();
+		$adv   = ! $setup && isset( $tabs[ $tab ]['group'] ) && 'pro' === $tabs[ $tab ]['group'];
 		?>
 		<div class="wrap karetaker-app<?php echo $adv ? ' is-adv' : ''; ?>" id="kt" data-state="<?php echo esc_attr( $home['state'] ); ?>" data-rest="<?php echo esc_attr( esc_url_raw( rest_url( Karetaker_Admin_Rest::NS . '/admin/' ) ) ); ?>">
 			<hr class="wp-header-end" hidden>
@@ -333,12 +387,20 @@ class Karetaker_Admin {
 					<?php
 				}
 				echo $adv ? '<div class="kt-adv">' : '';
-				include KARETAKER_DIR . 'includes/admin/partials/' . $tab . '.php';
+				include $tabs[ $tab ]['file'];
 				echo $adv ? '</div>' : '';
 				self::render_footer();
 			}
 
 			include KARETAKER_DIR . 'includes/admin/partials/sheet.php';
+
+			/**
+			 * Fires at the end of the Karetaker screen, inside the app container.
+			 *
+			 * @since 1.0.2
+			 * @param string $tab Current screen.
+			 */
+			do_action( 'karetaker_admin_page_end', $tab );
 			if ( ! $setup && self::advanced() ) {
 				echo '<div class="kt-adv">';
 				include KARETAKER_DIR . 'includes/admin/partials/drawer.php';
@@ -467,23 +529,19 @@ class Karetaker_Admin {
 	 * @return void
 	 */
 	private static function render_nav( $current ) {
-		$simple   = array(
-			'home'       => __( 'Home', 'karetaker' ),
-			'activity'   => __( 'Activity', 'karetaker' ),
-			'protection' => __( 'Protection', 'karetaker' ),
-			'settings'   => __( 'Settings', 'karetaker' ),
-		);
-		$advanced = array(
-			'issues'     => __( 'Issues', 'karetaker' ),
-			'monitoring' => __( 'Monitoring', 'karetaker' ),
-			'incidents'  => __( 'Incidents', 'karetaker' ),
-			'reports'    => __( 'Reports', 'karetaker' ),
-			'access'     => __( 'Access & API', 'karetaker' ),
-		);
+		$simple   = array();
+		$advanced = array();
+		foreach ( self::tabs() as $slug => $tab ) {
+			if ( 'pro' === $tab['group'] ) {
+				$advanced[ $slug ] = $tab['label'];
+			} else {
+				$simple[ $slug ] = $tab['label'];
+			}
+		}
 		?>
 		<nav class="nav" aria-label="<?php echo esc_attr__( 'Karetaker', 'karetaker' ); ?>">
 			<?php self::nav_links( $simple, $current ); ?>
-			<?php if ( self::advanced() ) : ?>
+			<?php if ( $advanced ) : ?>
 				<span class="sep"></span>
 				<span class="adv"><?php echo esc_html__( 'Advanced', 'karetaker' ); ?></span>
 				<?php self::nav_links( $advanced, $current ); ?>

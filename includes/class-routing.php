@@ -163,10 +163,15 @@ class Karetaker_Routing {
 	 */
 	public static function repeat_ttl() {
 		$repeat = (string) Karetaker_Settings::get( 'alert_repeat' );
-		if ( 'every' === $repeat ) {
-			return 0;
-		}
-		return '6h' === $repeat ? 6 * HOUR_IN_SECONDS : DAY_IN_SECONDS;
+		$ttl    = 'every' === $repeat ? 0 : ( '6h' === $repeat ? 6 * HOUR_IN_SECONDS : DAY_IN_SECONDS );
+
+		/**
+		 * Filters how long the same alert is held back before it may repeat.
+		 *
+		 * @since 1.0.2
+		 * @param int $ttl Seconds (0 = every time).
+		 */
+		return (int) apply_filters( 'karetaker_repeat_ttl', $ttl );
 	}
 
 	/**
@@ -176,7 +181,15 @@ class Karetaker_Routing {
 	 * @return bool
 	 */
 	public static function held() {
-		return Karetaker_Settings::alerts_paused_until() > 0 || null !== self::active_window();
+		$held = Karetaker_Settings::alerts_paused_until() > 0 || null !== self::active_window();
+
+		/**
+		 * Filters whether alerts are held right now.
+		 *
+		 * @since 1.0.2
+		 * @param bool $held Held by a pause or a maintenance window.
+		 */
+		return (bool) apply_filters( 'karetaker_alerts_held', $held );
 	}
 
 	/**
@@ -226,13 +239,22 @@ class Karetaker_Routing {
 			return false;
 		}
 		$routes = self::routes();
+		$send   = false;
 		if ( Karetaker_Events::SEVERITY_ACT === (int) $severity ) {
-			return ! empty( $routes[ $channel ]['act'] );
+			$send = ! empty( $routes[ $channel ]['act'] );
+		} elseif ( Karetaker_Events::SEVERITY_ATTENTION === (int) $severity ) {
+			$send = ! empty( $routes[ $channel ]['review'] ) && ! self::quiet_now();
 		}
-		if ( Karetaker_Events::SEVERITY_ATTENTION === (int) $severity ) {
-			return ! empty( $routes[ $channel ]['review'] ) && ! self::quiet_now();
-		}
-		return false;
+
+		/**
+		 * Filters whether a channel gets an alert of this severity now.
+		 *
+		 * @since 1.0.2
+		 * @param bool   $send     Decision so far.
+		 * @param string $channel  Channel key.
+		 * @param int    $severity Severity constant.
+		 */
+		return (bool) apply_filters( 'karetaker_should_send', $send, $channel, (int) $severity );
 	}
 
 	/**

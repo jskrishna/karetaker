@@ -4,7 +4,7 @@ Tags: security, monitoring, file integrity, activity log, hardening
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -185,6 +185,10 @@ When you enable those optional services, you also accept their terms:
 
 == Changelog ==
 
+= 1.0.2 =
+* Developer: an extension API (actions, filters and a JavaScript bridge) so add-ons can extend Karetaker without editing it.
+* Tidier stylesheet comments.
+
 = 1.0.1 =
 * New email design for alerts, the weekly summary, the pause summary and test emails, matching the admin screens.
 * Clearer subjects that lead with the status and name the site, for example "Act now: A must-use plugin file changed · example.com".
@@ -206,6 +210,9 @@ First public release.
 * WP-CLI commands and an emergency off switch.
 
 == Upgrade Notice ==
+
+= 1.0.2 =
+Maintenance release with extension hooks for developers. No visible changes.
 
 = 1.0.1 =
 Clearer, better-looking alert and summary emails.

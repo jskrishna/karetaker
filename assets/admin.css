@@ -1,12 +1,12 @@
 /*
  * Karetaker admin UI.
  *
- * Part 1 is the Simple mode design from karetaker-ui-v3.html, copied as-is. Two changes: the
+ * Part 1 is the Simple mode design. Two changes: the
  * issue side sheet is ".karetaker-app > .panel" (a direct child) so it never clashes with the
- * v2 ".panel" card, and tabs/segments also style <a>, because they are real links here.
+ * Advanced ".panel" card, and tabs/segments also style <a>, because they are real links here.
  * Part 2 keeps the animated watchtower and tagline from the previous UI.
- * Part 3 is the Advanced mode design from karetaker-ui-v2.html, scoped under ".kt-adv".
- * Part 4 adapts both to wp-admin and adds states the static prototypes did not need.
+ * Part 3 is the Advanced mode design, scoped under ".kt-adv".
+ * Part 4 adapts both to wp-admin and adds states the static designs did not need.
  */
 /* Core wp-admin styles .card; neutralise before the design system. */
 .karetaker-app .card{max-width:none;min-width:0;margin-top:0;padding:0;box-shadow:none;box-sizing:border-box}
@@ -228,7 +228,7 @@
 @keyframes ktsweep{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
 @media (max-width:700px){.karetaker-app .hero .tower-art{width:64px;height:75px}}
 
-/* ===== Part 3: Advanced mode (karetaker-ui-v2.html), scoped under .kt-adv ===== */
+/* ===== Part 3: Advanced mode, scoped under .kt-adv ===== */
 .karetaker-app .kt-adv code{font-family:var(--mono);font-size:12px;background:var(--panel-2);border:1px solid var(--line-soft);padding:0 5px;border-radius:3px}
 .karetaker-app .kt-adv [hidden]{display:none!important}
 .karetaker-app .kt-adv .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}

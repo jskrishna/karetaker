@@ -123,7 +123,16 @@ $karetaker_credits = array(
 			</div>
 		</div>
 
-		<div class="card rows" id="credits">
+		<?php
+	/**
+	 * Fires after the built-in Settings cards, before Credits.
+	 *
+	 * @since 1.0.2
+	 */
+	do_action( 'karetaker_settings_cards' );
+	?>
+
+	<div class="card rows" id="credits">
 			<div style="grid-template-columns:1fr">
 				<div><h3><?php echo esc_html__( 'Credits', 'karetaker' ); ?></h3><p><?php echo esc_html__( 'Karetaker is built by Team Krikir and relies on these projects.', 'karetaker' ); ?></p></div>
 				<ul class="credits">

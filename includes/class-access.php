@@ -123,7 +123,16 @@ class Karetaker_Access {
 				}
 			}
 		}
-		return $allcaps;
+
+		/**
+		 * Filters Karetaker capabilities for users who are not managers.
+		 *
+		 * @since 1.0.2
+		 * @param array $allcaps All capabilities of the user.
+		 * @param array $caps    Required primitive caps.
+		 * @param array $args    Capability check args.
+		 */
+		return (array) apply_filters( 'karetaker_grant_caps', $allcaps, (array) $caps, (array) $args );
 	}
 
 	/**

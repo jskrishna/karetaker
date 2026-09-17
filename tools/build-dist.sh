@@ -11,7 +11,7 @@ mkdir -p "$(dirname "$OUT")" "$STAGE"
 git -C "$ROOT" ls-files \
   | grep -vE '^\.|/\.' \
   | grep -vE '\.md$' \
-  | grep -vE '^(composer\.(json|lock)|phpcs\.xml(\.dist)?|tools/)' \
+  | grep -vE '^(composer\.(json|lock)|phpcs\.xml(\.dist)?|tools/|tests/)' \
   | grep -vE '^assets/(banner-.*\.png|icon-.*\.png|icon\.svg|logo-.*\.png|screenshot-.*\.png)$' \
   | rsync -a --files-from=- "$ROOT/" "$STAGE/"
 

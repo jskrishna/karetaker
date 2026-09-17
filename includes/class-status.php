@@ -48,7 +48,7 @@ class Karetaker_Status {
 			)
 		);
 
-		return array(
+		$snapshot = array(
 			'version'       => KARETAKER_VERSION,
 			'site_url'      => home_url( '/' ),
 			'disabled'      => karetaker_is_disabled(),
@@ -69,6 +69,14 @@ class Karetaker_Status {
 			),
 			'host_profile'  => self::host_profile(),
 		);
+
+		/**
+		 * Filters the status snapshot shared by WP-CLI and the status API.
+		 *
+		 * @since 1.0.2
+		 * @param array $snapshot Status facts.
+		 */
+		return (array) apply_filters( 'karetaker_status_snapshot', $snapshot );
 	}
 
 	/**

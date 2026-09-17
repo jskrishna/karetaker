@@ -13,7 +13,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPLv2%20or%20later-blue.svg" alt="License: GPLv2 or later"></a>
   <img src="https://img.shields.io/badge/WordPress-6.2%2B-21759b.svg" alt="Requires WordPress 6.2+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4.svg" alt="Requires PHP 7.4+">
-  <img src="https://img.shields.io/badge/version-1.0.1-brightgreen.svg" alt="Version 1.0.1">
+  <img src="https://img.shields.io/badge/version-1.0.2-brightgreen.svg" alt="Version 1.0.2">
 </p>
 
 ---

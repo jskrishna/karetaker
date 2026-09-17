@@ -83,6 +83,9 @@
 		});
 	};
 
+	/* ---------- bridge for add-ons ---------- */
+	window.karetakerAdmin = { root: root, L: L, data: data, $: $, $$: $$, fmt: fmt, toast: toast, api: api, reload: reload, busy: busy, on: on, esc: esc };
+
 	/* ---------- onboarding ---------- */
 	var onb = $('#onb');
 	if (onb) {
