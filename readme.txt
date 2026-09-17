@@ -4,7 +4,7 @@ Tags: security, monitoring, file integrity, activity log, hardening
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -177,6 +177,9 @@ When you enable those optional services, you also accept their terms:
 
 == Changelog ==
 
+= 1.1.1 =
+* Developer: filters for the navigation label and the footer version text, so add-ons can name their screens.
+
 = 1.1.0 =
 * Advanced mode is gone. Agency tools (issue tracking with owners, detailed monitoring, incident cases, client reports, role access and the read-only API) are no longer part of Karetaker.
 * Settings now holds the vulnerability lookup switch, how many events to keep, trusted proxies, a test alert button and email previews.
@@ -209,6 +212,9 @@ First public release.
 * WP-CLI commands and an emergency off switch.
 
 == Upgrade Notice ==
+
+= 1.1.1 =
+Small developer update. No visible changes.
 
 = 1.1.0 =
 Advanced mode is removed. Every check, alert and protection stays; Settings gains privacy and data options.

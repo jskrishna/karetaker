@@ -126,6 +126,48 @@ karetaker_smoke_assert( ! class_exists( 'Karetaker_Cases' ) && ! class_exists( '
 karetaker_smoke_assert( ! method_exists( 'Karetaker_Routing', 'windows' ) && ! method_exists( 'Karetaker_Access', 'tokens' ), 'agency features are not in the core plugin' );
 karetaker_smoke_assert( ! array_key_exists( 'advanced_mode', Karetaker_Settings::defaults() ), 'advanced_mode setting removed' );
 
+wp_set_current_user( 1 );
+update_option( 'karetaker_onboarded', 1 );
+add_filter(
+	'karetaker_admin_version_text',
+	static function () {
+		return 'SMOKE-VERSION';
+	}
+);
+add_filter(
+	'karetaker_admin_nav_group_label',
+	static function () {
+		return 'SMOKE-GROUP';
+	}
+);
+add_filter(
+	'karetaker_admin_tabs',
+	static function ( $tabs ) {
+		$tabs['smoke'] = array(
+			'label' => 'Smoke',
+			'cap'   => 'manage_options',
+			'file'  => KARETAKER_DIR . 'includes/admin/partials/protection.php',
+			'group' => 'pro',
+		);
+		return $tabs;
+	}
+);
+Karetaker_Admin::tabs( true );
+$_GET = array(
+	'page' => 'karetaker',
+	'tab'  => 'home',
+);
+ob_start();
+Karetaker_Admin::render_page();
+$karetaker_page = (string) ob_get_clean();
+karetaker_smoke_assert( false !== strpos( $karetaker_page, 'SMOKE-VERSION' ), 'karetaker_admin_version_text filter' );
+karetaker_smoke_assert( false !== strpos( $karetaker_page, 'SMOKE-GROUP' ), 'karetaker_admin_nav_group_label filter' );
+remove_all_filters( 'karetaker_admin_version_text' );
+remove_all_filters( 'karetaker_admin_nav_group_label' );
+remove_all_filters( 'karetaker_admin_tabs' );
+Karetaker_Admin::tabs( true );
+$_GET = array();
+
 // API checks are appended by later tasks above this line.
 
 if ( $karetaker_smoke_failed ) {

@@ -480,7 +480,16 @@ class Karetaker_Admin {
 			<?php self::nav_links( $simple, $current ); ?>
 			<?php if ( $advanced ) : ?>
 				<span class="sep"></span>
-				<span class="adv"><?php echo esc_html__( 'Advanced', 'karetaker' ); ?></span>
+				<?php
+				/**
+				 * Filters the label shown before screens added by add-ons.
+				 *
+				 * @since 1.1.1
+				 * @param string $label Label.
+				 */
+				$karetaker_group = (string) apply_filters( 'karetaker_admin_nav_group_label', __( 'Advanced', 'karetaker' ) );
+				?>
+				<span class="adv"><?php echo esc_html( $karetaker_group ); ?></span>
 				<?php self::nav_links( $advanced, $current ); ?>
 			<?php endif; ?>
 		</nav>
@@ -519,7 +528,16 @@ class Karetaker_Admin {
 		$credits = current_user_can( 'manage_options' ) ? self::admin_page_url( 'settings' ) . '#credits' : 'https://wordpress.org/plugins/karetaker/';
 		?>
 		<p class="app-foot">
-			<span><?php echo esc_html( 'Karetaker ' . KARETAKER_VERSION ); ?></span>
+			<?php
+			/**
+			 * Filters the version text in the footer of the Karetaker screen.
+			 *
+			 * @since 1.1.1
+			 * @param string $text Version text.
+			 */
+			$karetaker_version = (string) apply_filters( 'karetaker_admin_version_text', 'Karetaker ' . KARETAKER_VERSION );
+			?>
+			<span><?php echo esc_html( $karetaker_version ); ?></span>
 			<span>
 				<?php
 				printf(
