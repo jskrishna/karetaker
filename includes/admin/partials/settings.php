@@ -1,6 +1,6 @@
 <?php
 /**
- * Settings: where alerts go, site type, visibility, Advanced mode, credits.
+ * Settings: where alerts go, site type, privacy and data, tools, credits.
  *
  * @package Karetaker
  */
@@ -103,15 +103,45 @@ $karetaker_credits = array(
 				</div>
 			</div>
 			<div>
-				<div><h3><?php echo esc_html__( 'Only administrators can see Karetaker', 'karetaker' ); ?></h3><p><?php echo esc_html__( 'Hides Karetaker from editors, shop managers and clients.', 'karetaker' ); ?></p></div>
-				<label class="switch"><input type="checkbox" data-kt-setting="admins_only"<?php checked( Karetaker_Access::admins_only() ); ?> aria-label="<?php echo esc_attr__( 'Only administrators can see Karetaker', 'karetaker' ); ?>"><span></span></label>
+				<div><h3><?php echo esc_html__( 'Check plugins against a vulnerability list', 'karetaker' ); ?></h3><p><?php echo esc_html__( 'Once a day, sends plugin names and versions (nothing about your site) to the WPVulnerability database.', 'karetaker' ); ?></p></div>
+				<label class="switch"><input type="checkbox" data-kt-setting="vuln_lookup_enabled"<?php checked( (bool) Karetaker_Settings::get( 'vuln_lookup_enabled' ) ); ?> aria-label="<?php echo esc_attr__( 'Check plugins against a vulnerability list', 'karetaker' ); ?>"><span></span></label>
+			</div>
+		</div>
+
+		<div class="card rows">
+			<div style="grid-template-columns:1fr">
+				<div class="field">
+					<label for="setRowCap"><?php echo esc_html__( 'Events to keep', 'karetaker' ); ?></label>
+					<input type="number" id="setRowCap" data-kt-setting="row_cap" min="<?php echo esc_attr( (string) Karetaker_Settings::ROW_CAP_MIN ); ?>" max="<?php echo esc_attr( (string) Karetaker_Settings::ROW_CAP_MAX ); ?>" step="500" value="<?php echo esc_attr( (string) Karetaker_Settings::row_cap() ); ?>" style="max-width:160px">
+					<span class="hint"><?php echo esc_html__( 'The most recent events are kept in your database. Older ones are deleted.', 'karetaker' ); ?></span>
+				</div>
+				<div class="field" style="margin-top:12px">
+					<label for="setProxies"><?php echo esc_html__( 'Trusted proxies', 'karetaker' ); ?></label>
+					<textarea id="setProxies" rows="2" data-kt-setting="trusted_proxies" placeholder="<?php echo esc_attr__( 'One IP or CIDR per line', 'karetaker' ); ?>"><?php echo esc_textarea( implode( "\n", (array) Karetaker_Settings::get( 'trusted_proxies' ) ) ); ?></textarea>
+					<span class="hint"><?php echo esc_html__( 'Only needed behind a CDN or load balancer, so login alerts show the real visitor IP.', 'karetaker' ); ?></span>
+				</div>
 			</div>
 		</div>
 
 		<div class="card rows">
 			<div>
-				<div><h3><?php echo esc_html__( 'Advanced mode', 'karetaker' ); ?> <span class="tag"><?php echo esc_html__( 'For agencies & developers', 'karetaker' ); ?></span></h3><p><?php echo esc_html__( 'Adds issue tracking, detailed monitoring, incidents, client reports and API access.', 'karetaker' ); ?></p></div>
-				<label class="switch"><input type="checkbox" id="advToggle" data-kt-setting="advanced_mode" data-reload="1"<?php checked( self::advanced() ); ?> aria-label="<?php echo esc_attr__( 'Advanced mode', 'karetaker' ); ?>"><span></span></label>
+				<div><h3><?php echo esc_html__( 'Send a test alert', 'karetaker' ); ?></h3><p><?php echo esc_html__( 'Sends a test to every connected destination.', 'karetaker' ); ?></p></div>
+				<button type="button" class="btn" data-kt-test><?php echo esc_html__( 'Send test', 'karetaker' ); ?></button>
+			</div>
+			<div>
+				<div><h3><?php echo esc_html__( 'Email previews', 'karetaker' ); ?></h3><p><?php echo esc_html__( 'See the alert and summary emails built from this site\'s data.', 'karetaker' ); ?></p></div>
+				<span>
+					<?php
+					$karetaker_previews = array(
+						'act'    => __( 'Act now', 'karetaker' ),
+						'weekly' => __( 'Weekly', 'karetaker' ),
+						'test'   => __( 'Test', 'karetaker' ),
+					);
+					foreach ( $karetaker_previews as $karetaker_preview => $karetaker_label ) :
+						?>
+						<a class="btn" href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=karetaker_email_preview&type=' . $karetaker_preview ), 'karetaker_email_preview' ) ); ?>" target="_blank" rel="noopener"><?php echo esc_html( $karetaker_label ); ?></a>
+					<?php endforeach; ?>
+				</span>
 			</div>
 			<div>
 				<div><h3><?php echo esc_html__( 'Run setup again', 'karetaker' ); ?></h3><p><?php echo esc_html__( 'Go through the one-minute setup from the start.', 'karetaker' ); ?></p></div>
@@ -131,6 +161,15 @@ $karetaker_credits = array(
 	 */
 	do_action( 'karetaker_settings_cards' );
 	?>
+
+	<?php if ( ! defined( 'KARETAKER_PRO_VERSION' ) && apply_filters( 'karetaker_show_pro_card', false ) ) : ?>
+		<div class="card rows">
+			<div>
+				<div><h3><?php echo esc_html__( 'Karetaker Pro', 'karetaker' ); ?> <span class="tag"><?php echo esc_html__( 'For agencies', 'karetaker' ); ?></span></h3><p><?php echo esc_html__( 'Issue tracking with owners, incident cases, client reports, role access and a read-only API.', 'karetaker' ); ?></p></div>
+				<a class="btn" href="https://www.krikir.com/karetaker-pro/" target="_blank" rel="noopener noreferrer"><?php echo esc_html__( 'Learn more', 'karetaker' ); ?></a>
+			</div>
+		</div>
+	<?php endif; ?>
 
 	<div class="card rows" id="credits">
 			<div style="grid-template-columns:1fr">

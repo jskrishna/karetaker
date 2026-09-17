@@ -1,6 +1,6 @@
 <?php
 /**
- * Protection: simple switches for the harden options.
+ * Protection: simple switches for the harden options, and an emergency sign-out.
  *
  * @package Karetaker
  */
@@ -39,5 +39,14 @@ $karetaker_rows    = array(
 				<label class="switch"><input type="checkbox" data-kt-harden="<?php echo esc_attr( $karetaker_key ); ?>"<?php checked( $karetaker_on ); ?> aria-label="<?php echo esc_attr( $karetaker_row[0] ); ?>"><span></span></label>
 			</div>
 		<?php endforeach; ?>
+	</div>
+	<div class="card rows" style="margin-top:14px">
+		<div>
+			<div>
+				<h3><?php echo esc_html__( 'Sign out all administrators', 'karetaker' ); ?></h3>
+				<p><?php echo esc_html__( 'Ends every other administrator session on every device. Use it if you think someone else is logged in.', 'karetaker' ); ?></p>
+			</div>
+			<button type="button" class="btn" data-kt-sessions="all"><?php echo esc_html__( 'Sign out everyone else', 'karetaker' ); ?></button>
+		</div>
 	</div>
 </section>

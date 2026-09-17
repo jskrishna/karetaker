@@ -92,7 +92,6 @@ class Karetaker_Status {
 			'login_lockout_default' => false,
 			'writes_server_config'  => false,
 			'phone_home'            => false,
-			'agency_status_enabled' => (bool) Karetaker_Access::tokens(),
 			'status_route'          => 'karetaker/v1/status',
 			'cli'                   => 'wp karetaker status',
 			'kill_switch_constant'  => 'KARETAKER_DISABLE',

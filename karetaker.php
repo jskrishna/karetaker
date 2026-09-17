@@ -3,7 +3,7 @@
  * Plugin Name: Karetaker
  * Plugin URI:  https://wordpress.org/plugins/karetaker/
  * Description: Watches a WordPress site for compromise signals and tells the owner only when something needs them.
- * Version:     1.0.2
+ * Version:     1.1.0
  * Author:      Team Krikir
  * Author URI:  https://www.krikir.com/
  * License:     GPLv2 or later
@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'KARETAKER_VERSION', '1.0.2' );
+define( 'KARETAKER_VERSION', '1.1.0' );
 define( 'KARETAKER_FILE', __FILE__ );
 define( 'KARETAKER_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KARETAKER_SLUG', 'karetaker' );
@@ -60,12 +60,10 @@ require_once KARETAKER_DIR . 'includes/class-status.php';
 require_once KARETAKER_DIR . 'includes/class-report.php';
 require_once KARETAKER_DIR . 'includes/class-incident.php';
 require_once KARETAKER_DIR . 'includes/class-tower.php';
-require_once KARETAKER_DIR . 'includes/class-agency.php';
 require_once KARETAKER_DIR . 'includes/class-routing.php';
 require_once KARETAKER_DIR . 'includes/class-access.php';
 require_once KARETAKER_DIR . 'includes/class-receipts.php';
 require_once KARETAKER_DIR . 'includes/class-issues.php';
-require_once KARETAKER_DIR . 'includes/class-cases.php';
 require_once KARETAKER_DIR . 'includes/class-admin-data.php';
 require_once KARETAKER_DIR . 'includes/class-admin-watch.php';
 require_once KARETAKER_DIR . 'includes/class-admin-rest.php';
@@ -95,8 +93,6 @@ function karetaker_deactivate() {
 	Karetaker_Scanner::unschedule();
 	wp_unschedule_hook( Karetaker_Summary::WEEKLY_HOOK );
 	wp_unschedule_hook( Karetaker_Summary::PAUSE_HOOK );
-	wp_unschedule_hook( Karetaker_Routing::WINDOW_HOOK );
-	wp_unschedule_hook( Karetaker_Exports::MONTHLY_HOOK );
 }
 
 /**
@@ -119,7 +115,6 @@ function karetaker_boot() {
 	Karetaker_Chat::init();
 	Karetaker_Summary::init();
 	Karetaker_Harden::init();
-	Karetaker_Agency::init();
 	Karetaker_Routing::init();
 	Karetaker_Access::init();
 	Karetaker_Admin_Rest::init();
@@ -139,6 +134,9 @@ function karetaker_boot() {
 	 * @param int $api Extension API version.
 	 */
 	do_action( 'karetaker_loaded', KARETAKER_API );
+
+	// Add-ons may have added settings defaults while loading.
+	Karetaker_Settings::flush();
 }
 add_action( 'plugins_loaded', 'karetaker_boot' );
 

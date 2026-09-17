@@ -36,7 +36,7 @@ class Karetaker_Settings {
 	 * @return array<string,mixed>
 	 */
 	public static function defaults() {
-		return array(
+		$defaults = array(
 			'row_cap'                => 5000,
 			'alert_email'            => '',
 			'alerts_enabled'         => true,
@@ -51,7 +51,6 @@ class Karetaker_Settings {
 				'registration'  => false,
 				'app_passwords' => false,
 			),
-			'agency_token'           => '',
 			'webhook_enabled'        => false,
 			'webhook_url'            => '',
 			'webhook_secret'         => '',
@@ -70,30 +69,30 @@ class Karetaker_Settings {
 			'discord_webhook_url'    => '',
 			'teams_enabled'          => false,
 			'teams_webhook_url'      => '',
-			'report_client_email'    => '',
 			'report_logo_id'         => 0,
 			'routes'                 => array(),
-			'alert_repeat'           => '24h',
-			'quiet_hours'            => '',
 			'weekly_slot'            => 'mon09',
-			'maintenance_windows'    => array(),
-			'advanced_mode'          => false,
 			'site_type'              => '',
-			'admins_only'            => true,
-			'role_caps'              => array(),
 			'report_include'         => array( 'summary', 'issues', 'plugins', 'harden' ),
-			'report_schedule'        => '',
 		);
+
+		/**
+		 * Filters the settings defaults, so add-ons can store their own keys.
+		 *
+		 * @since 1.1.0
+		 * @param array $defaults Key => default value.
+		 */
+		return (array) apply_filters( 'karetaker_settings_defaults', $defaults );
 	}
 
 	/**
-	 * Agency status token (empty means the channel is off).
+	 * Forgets the cached settings, so defaults added by add-ons apply.
 	 *
-	 * @since 1.0.0
-	 * @return string
+	 * @since 1.1.0
+	 * @return void
 	 */
-	public static function agency_token() {
-		return (string) self::get( 'agency_token' );
+	public static function flush() {
+		self::$cache = null;
 	}
 
 	/**

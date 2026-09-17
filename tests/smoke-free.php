@@ -95,7 +95,7 @@ $karetaker_editor = wp_insert_user(
 	)
 );
 if ( ! is_wp_error( $karetaker_editor ) ) {
-	Karetaker_Settings::update( array( 'admins_only' => false ) );
+	remove_all_filters( 'karetaker_grant_caps' ); // Add-ons such as Pro may grant roles access.
 	karetaker_smoke_assert( ! user_can( $karetaker_editor, 'karetaker_view' ), 'editor has no access by default' );
 	add_filter(
 		'karetaker_grant_caps',
@@ -106,10 +106,25 @@ if ( ! is_wp_error( $karetaker_editor ) ) {
 	);
 	karetaker_smoke_assert( user_can( $karetaker_editor, 'karetaker_view' ), 'karetaker_grant_caps filter' );
 	remove_all_filters( 'karetaker_grant_caps' );
-	Karetaker_Settings::update( array( 'admins_only' => true ) );
 	require_once ABSPATH . 'wp-admin/includes/user.php';
 	wp_delete_user( $karetaker_editor );
 }
+
+add_filter(
+	'karetaker_settings_defaults',
+	static function ( $defaults ) {
+		$defaults['smoke_default'] = 'yes';
+		return $defaults;
+	}
+);
+Karetaker_Settings::flush();
+karetaker_smoke_assert( 'yes' === Karetaker_Settings::get( 'smoke_default' ), 'karetaker_settings_defaults filter' );
+remove_all_filters( 'karetaker_settings_defaults' );
+Karetaker_Settings::flush();
+
+karetaker_smoke_assert( ! class_exists( 'Karetaker_Cases' ) && ! class_exists( 'Karetaker_Agency' ), 'agency classes are not in the core plugin' );
+karetaker_smoke_assert( ! method_exists( 'Karetaker_Routing', 'windows' ) && ! method_exists( 'Karetaker_Access', 'tokens' ), 'agency features are not in the core plugin' );
+karetaker_smoke_assert( ! array_key_exists( 'advanced_mode', Karetaker_Settings::defaults() ), 'advanced_mode setting removed' );
 
 // API checks are appended by later tasks above this line.
 

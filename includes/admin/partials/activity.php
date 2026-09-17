@@ -24,6 +24,9 @@ $karetaker_base = self::admin_page_url( 'activity', 'all' === $karetaker_mode ? 
 		</div>
 		<span class="grow" style="flex:1"></span>
 		<span class="hint"><?php echo esc_html__( 'Kept on your site only.', 'karetaker' ); ?></span>
+		<?php if ( current_user_can( 'karetaker_view_log' ) ) : ?>
+			<a class="btn" href="<?php echo esc_url( self::export_url( 'activity', 'csv' ) ); ?>"><?php echo esc_html__( 'Download CSV', 'karetaker' ); ?></a>
+		<?php endif; ?>
 	</div>
 	<div class="card">
 		<?php if ( ! $karetaker_feed['days'] ) : ?>

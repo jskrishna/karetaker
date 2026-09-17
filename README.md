@@ -13,35 +13,25 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPLv2%20or%20later-blue.svg" alt="License: GPLv2 or later"></a>
   <img src="https://img.shields.io/badge/WordPress-6.2%2B-21759b.svg" alt="Requires WordPress 6.2+">
   <img src="https://img.shields.io/badge/PHP-7.4%2B-777bb4.svg" alt="Requires PHP 7.4+">
-  <img src="https://img.shields.io/badge/version-1.0.2-brightgreen.svg" alt="Version 1.0.2">
+  <img src="https://img.shields.io/badge/version-1.1.0-brightgreen.svg" alt="Version 1.1.0">
 </p>
 
 ---
 
 ## What it does
 
-Karetaker opens in **Simple mode**: four screens, plain language, nothing to configure before it starts working.
+Karetaker has four screens, plain language, and nothing to configure before it starts working.
 
 | Screen | Job |
 | --- | --- |
 | **Home** | One headline for the whole site, a card per thing that needs you, and the twelve checks it runs |
-| **Activity** | Everything it recorded, grouped by day, written for people |
-| **Protection** | Optional protections you switch on or off. None of them can lock you out |
-| **Settings** | Where alerts go, the weekly summary, a one-hour pause while you work, site type |
-
-**Advanced mode** (Settings → Advanced mode) adds the screens an agency needs:
-
-| Screen | Job |
-| --- | --- |
-| **Issues** | Findings grouped into issues with an owner, status and history |
-| **Monitoring** | Files, users & sessions, plugin risk, scripts & SEO, and the full activity log |
-| **Incidents** | Cases with a seven-step response checklist and an exportable record |
-| **Reports** | Client-ready reports, plus CSV / JSON / ZIP exports |
-| **Access & API** | Role permissions and read-only API tokens |
+| **Activity** | Everything it recorded, grouped by day, written for people, with a CSV download |
+| **Protection** | Optional protections you switch on or off, none of which can lock you out, and an emergency sign-out for every administrator |
+| **Settings** | Where alerts go, the weekly summary, a one-hour pause while you work, site type, vulnerability lookup, data and proxy options, test alert and email previews |
 
 The first thing you see is a **one-minute setup**: where alerts go, what kind of site this is, a first check, and three safe protections.
 
-Visibility is **pull** (admin screens, WP-CLI, optional signed REST endpoints). Notification is **push** (email, and optionally Telegram, Slack, Discord, Microsoft Teams or your own webhook). Hardening stays **off** until you turn each protection on.
+Visibility is **pull** (admin screens and WP-CLI). Notification is **push** (email, and optionally Telegram, Slack, Discord, Microsoft Teams or your own webhook). Hardening stays **off** until you turn each protection on.
 
 ## What it is not
 
@@ -103,16 +93,14 @@ Stop everything immediately:
 
 Uninstall removes the plugin’s events table, options, and scheduled hooks. Nothing left behind.
 
-## Read-only API (optional)
+## WP-CLI
 
-Two read-only endpoints are available for dashboards that watch several sites:
-
-```text
-/wp-json/karetaker/v1/status
-/wp-json/karetaker/v1/events
+```bash
+wp karetaker status     # JSON status, including the host safety profile
+wp karetaker scan       # run every check now
+wp karetaker log        # recent events
+wp karetaker incident   # deeper multi-pass check when you think the site was hacked
 ```
-
-They stay **off** until you create a token in **Access & API** (Advanced mode). A token carries a scope (`status`, `events`), an optional IP allowlist and an optional expiry, is stored hashed, and is shown once at creation. Responses are HMAC-signed with the token. A token never grants remote control.
 
 ## Privacy
 
@@ -122,7 +110,6 @@ Everything else is off until you turn it on yourself:
 
 - Alert emails, and messages to Telegram, Slack, Discord, Microsoft Teams or your own webhook
 - The optional vulnerability lookup (plugin names and versions only)
-- The read-only API endpoints, once you create a token
 
 Karetaker does **not** phone home to Team Krikir, has no account system, and loads no third-party scripts, fonts or ads.
 

@@ -50,24 +50,17 @@ class Karetaker_Admin_Rest {
 	 */
 	public static function register() {
 		$routes = array(
-			'first-check'   => array( 'POST', 'first_check', 'manage_options' ),
-			'onboarding'    => array( 'POST', 'onboarding', 'manage_options' ),
-			'harden'        => array( 'POST', 'harden', 'manage_options' ),
-			'setting'       => array( 'POST', 'setting', 'manage_options' ),
-			'scan'          => array( 'POST', 'scan', 'manage_options' ),
-			'pause'         => array( 'POST', 'pause', 'manage_options' ),
-			'channel'       => array( 'POST', 'channel', 'manage_options' ),
-			'test-alert'    => array( 'POST', 'test_alert', 'manage_options' ),
-			'issue'         => array( 'POST', 'issue', 'karetaker_resolve' ),
-			'bulk-expected' => array( 'POST', 'bulk_expected', 'manage_options' ),
-			'unmark'        => array( 'POST', 'unmark', 'manage_options' ),
-			'feed'          => array( 'GET', 'feed', 'karetaker_view_log' ),
-			'case'          => array( 'POST', 'case_action', 'karetaker_resolve' ),
-			'token'         => array( 'POST', 'token', 'manage_options' ),
-			'window'        => array( 'POST', 'window', 'manage_options' ),
-			'roles'         => array( 'POST', 'roles', 'manage_options' ),
-			'sessions'      => array( 'POST', 'sessions', 'manage_options' ),
-			'saved-view'    => array( 'POST', 'saved_view', 'karetaker_view_log' ),
+			'first-check' => array( 'POST', 'first_check', 'manage_options' ),
+			'onboarding'  => array( 'POST', 'onboarding', 'manage_options' ),
+			'harden'      => array( 'POST', 'harden', 'manage_options' ),
+			'setting'     => array( 'POST', 'setting', 'manage_options' ),
+			'scan'        => array( 'POST', 'scan', 'manage_options' ),
+			'pause'       => array( 'POST', 'pause', 'manage_options' ),
+			'channel'     => array( 'POST', 'channel', 'manage_options' ),
+			'test-alert'  => array( 'POST', 'test_alert', 'manage_options' ),
+			'issue'       => array( 'POST', 'issue', 'karetaker_resolve' ),
+			'feed'        => array( 'GET', 'feed', 'karetaker_view_log' ),
+			'sessions'    => array( 'POST', 'sessions', 'manage_options' ),
 		);
 		foreach ( $routes as $path => $route ) {
 			register_rest_route(
@@ -189,8 +182,6 @@ class Karetaker_Admin_Rest {
 		$key   = sanitize_key( (string) $request->get_param( 'key' ) );
 		$value = $request->get_param( 'value' );
 		switch ( $key ) {
-			case 'advanced_mode':
-			case 'admins_only':
 			case 'vuln_lookup_enabled':
 				$clean = (bool) $value;
 				break;
@@ -203,15 +194,6 @@ class Karetaker_Admin_Rest {
 					return new WP_Error( 'karetaker_bad_email', __( 'That email address doesn’t look right.', 'karetaker' ), array( 'status' => 400 ) );
 				}
 				break;
-			case 'alert_repeat':
-				$clean = in_array( $value, array( '24h', '6h', 'every' ), true ) ? $value : '24h';
-				break;
-			case 'quiet_hours':
-				$clean = '' === trim( (string) $value ) ? '' : sanitize_text_field( (string) $value );
-				if ( '' !== $clean && ! Karetaker_Routing::parse_range( $clean ) ) {
-					return new WP_Error( 'karetaker_bad_range', __( 'Use a range like 23:00-07:00.', 'karetaker' ), array( 'status' => 400 ) );
-				}
-				break;
 			case 'weekly_slot':
 				$clean = 'fri17' === $value ? 'fri17' : 'mon09';
 				break;
@@ -221,18 +203,29 @@ class Karetaker_Admin_Rest {
 			case 'trusted_proxies':
 				$clean = self::proxy_lines( sanitize_textarea_field( (string) $value ) );
 				break;
-			case 'route':
-				$channel = sanitize_key( (string) $request->get_param( 'channel' ) );
-				$kind    = sanitize_key( (string) $request->get_param( 'kind' ) );
-				Karetaker_Routing::set( $channel, $kind, (bool) $value );
-				self::log( 'routes.' . $channel . '.' . $kind, $value ? '1' : '0' );
-				return rest_ensure_response( array( 'ok' => true ) );
 			case 'weekly_summary':
 				Karetaker_Routing::set( 'email', 'weekly', (bool) $value );
 				self::log( 'routes.email.weekly', $value ? '1' : '0' );
 				return rest_ensure_response( array( 'ok' => true ) );
 			default:
-				return new WP_Error( 'karetaker_bad_setting', __( 'Unknown setting.', 'karetaker' ), array( 'status' => 400 ) );
+				/**
+				 * Lets add-ons handle their own settings on this endpoint.
+				 *
+				 * Return a clean value to save it, a WP_Error to reject it, or a WP_REST_Response
+				 * when the add-on saved it itself. Leave null for unknown keys.
+				 *
+				 * @since 1.1.0
+				 * @param mixed           $result  Null.
+				 * @param string          $key     Setting key.
+				 * @param WP_REST_Request $request Request.
+				 */
+				$clean = apply_filters( 'karetaker_admin_setting', null, $key, $request );
+				if ( null === $clean ) {
+					return new WP_Error( 'karetaker_bad_setting', __( 'Unknown setting.', 'karetaker' ), array( 'status' => 400 ) );
+				}
+				if ( is_wp_error( $clean ) || $clean instanceof WP_REST_Response ) {
+					return $clean;
+				}
 		}
 		Karetaker_Settings::update( array( $key => $clean ) );
 		if ( 'weekly_slot' === $key ) {
@@ -437,36 +430,6 @@ class Karetaker_Admin_Rest {
 	}
 
 	/**
-	 * Marks several events as expected.
-	 *
-	 * @since 1.0.0
-	 * @param WP_REST_Request $request Request.
-	 * @return WP_REST_Response
-	 */
-	public static function bulk_expected( $request ) {
-		$done = 0;
-		foreach ( array_slice( array_map( 'intval', (array) $request->get_param( 'ids' ) ), 0, 100 ) as $id ) {
-			$row = Karetaker_Expected::get_event( $id );
-			if ( $row && Karetaker_Expected::supports( (string) $row->event_code ) && ! is_wp_error( Karetaker_Expected::mark( $id ) ) ) {
-				++$done;
-			}
-		}
-		return rest_ensure_response( array( 'marked' => $done ) );
-	}
-
-	/**
-	 * Removes an event from the ignore list so it can alert again.
-	 *
-	 * @since 1.0.0
-	 * @param WP_REST_Request $request Request.
-	 * @return WP_REST_Response|WP_Error
-	 */
-	public static function unmark( $request ) {
-		$result = Karetaker_Expected::unmark( (int) $request->get_param( 'id' ) );
-		return is_wp_error( $result ) ? self::error( $result ) : rest_ensure_response( array( 'ok' => true ) );
-	}
-
-	/**
 	 * Day-grouped activity feed page.
 	 *
 	 * @since 1.0.0
@@ -477,84 +440,6 @@ class Karetaker_Admin_Rest {
 		$mode = 'all' === $request->get_param( 'mode' ) ? 'all' : 'important';
 		$page = max( 1, (int) $request->get_param( 'page' ) );
 		return rest_ensure_response( Karetaker_Admin_Data::feed( $mode, $page ) );
-	}
-
-	/**
-	 * Opens or updates an incident case.
-	 *
-	 * @since 1.0.0
-	 * @param WP_REST_Request $request Request.
-	 * @return WP_REST_Response|WP_Error
-	 */
-	public static function case_action( $request ) {
-		$action = sanitize_key( (string) $request->get_param( 'action' ) );
-		if ( 'open' === $action ) {
-			$case = Karetaker_Cases::open( (string) $request->get_param( 'title' ), array_map( 'intval', (array) $request->get_param( 'issues' ) ) );
-		} else {
-			$value = $request->get_param( 'value' );
-			$case  = Karetaker_Cases::update( sanitize_text_field( (string) $request->get_param( 'id' ) ), $action, is_array( $value ) ? array_map( 'sanitize_text_field', $value ) : absint( $value ) );
-		}
-		return is_wp_error( $case ) ? self::error( $case ) : rest_ensure_response( array( 'case' => $case ) );
-	}
-
-	/**
-	 * Creates, rotates or revokes an API token.
-	 *
-	 * @since 1.0.0
-	 * @param WP_REST_Request $request Request.
-	 * @return WP_REST_Response
-	 */
-	public static function token( $request ) {
-		$action = sanitize_key( (string) $request->get_param( 'action' ) );
-		$plain  = '';
-		$name   = sanitize_text_field( (string) $request->get_param( 'name' ) );
-		if ( 'create' === $action ) {
-			$ips   = preg_split( '/[\s,]+/', sanitize_text_field( (string) $request->get_param( 'ips' ) ) );
-			$plain = Karetaker_Access::create( $name, array_map( 'sanitize_key', (array) $request->get_param( 'scopes' ) ), is_array( $ips ) ? $ips : array(), (int) $request->get_param( 'days' ) );
-		} elseif ( 'rotate' === $action ) {
-			$plain = Karetaker_Access::rotate( sanitize_text_field( (string) $request->get_param( 'id' ) ) );
-		} elseif ( 'revoke' === $action ) {
-			Karetaker_Access::revoke( sanitize_text_field( (string) $request->get_param( 'id' ) ) );
-		}
-		Karetaker_Events::record(
-			'token_updated',
-			array(
-				'action' => $action,
-				'name'   => $name,
-			)
-		);
-		return rest_ensure_response( array( 'token' => $plain ) );
-	}
-
-	/**
-	 * Adds or deletes a maintenance window.
-	 *
-	 * @since 1.0.0
-	 * @param WP_REST_Request $request Request.
-	 * @return WP_REST_Response|WP_Error
-	 */
-	public static function window( $request ) {
-		if ( 'delete' === $request->get_param( 'action' ) ) {
-			Karetaker_Routing::delete_window( (int) $request->get_param( 'index' ) );
-		} elseif ( ! Karetaker_Routing::save_window( (int) $request->get_param( 'index' ), (string) $request->get_param( 'name' ), (int) $request->get_param( 'day' ), sanitize_text_field( (string) $request->get_param( 'start' ) ), sanitize_text_field( (string) $request->get_param( 'end' ) ) ) ) {
-			return new WP_Error( 'karetaker_bad_window', __( 'Pick a day and a start and end time.', 'karetaker' ), array( 'status' => 400 ) );
-		}
-		Karetaker_Routing::sync_window_cron();
-		self::log( 'maintenance_windows', (string) count( Karetaker_Routing::windows() ) );
-		return rest_ensure_response( array( 'windows' => Karetaker_Routing::windows() ) );
-	}
-
-	/**
-	 * Saves the role permission matrix.
-	 *
-	 * @since 1.0.0
-	 * @param WP_REST_Request $request Request.
-	 * @return WP_REST_Response
-	 */
-	public static function roles( $request ) {
-		Karetaker_Access::save_matrix( (array) $request->get_param( 'matrix' ) );
-		self::log( 'role_caps', 'updated' );
-		return rest_ensure_response( array( 'matrix' => Karetaker_Access::matrix() ) );
 	}
 
 	/**
@@ -577,25 +462,5 @@ class Karetaker_Admin_Rest {
 			}
 		}
 		return rest_ensure_response( array( 'ok' => true ) );
-	}
-
-	/**
-	 * Saves or deletes a named Activity log filter for the current user.
-	 *
-	 * @since 1.0.0
-	 * @param WP_REST_Request $request Request.
-	 * @return WP_REST_Response
-	 */
-	public static function saved_view( $request ) {
-		$views = get_user_meta( get_current_user_id(), 'karetaker_saved_views', true );
-		$views = is_array( $views ) ? $views : array();
-		$name  = sanitize_text_field( (string) $request->get_param( 'name' ) );
-		if ( 'delete' === $request->get_param( 'action' ) ) {
-			unset( $views[ $name ] );
-		} elseif ( '' !== $name ) {
-			$views[ $name ] = esc_url_raw( (string) $request->get_param( 'url' ) );
-		}
-		update_user_meta( get_current_user_id(), 'karetaker_saved_views', array_slice( $views, 0, 20, true ) );
-		return rest_ensure_response( array( 'views' => $views ) );
 	}
 }

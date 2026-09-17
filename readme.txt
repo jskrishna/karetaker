@@ -4,7 +4,7 @@ Tags: security, monitoring, file integrity, activity log, hardening
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.2
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,25 +43,24 @@ The quiet business killers that no scanner reports, because technically nothing 
 = Opt-in hardening, with receipts =
 
 A small set of hardening toggles, every one of them **off until you turn it on**, and
-every one reversible from Karetaker → Harden. Each toggle shows *Desired* next to
+every one reversible from Karetaker → Protection. Each toggle shows *Desired* next to
 *Live now*, so you always see what is actually in effect rather than what was merely
 requested.
 
 = How it reaches you =
 
-* **Visibility is pull**: the Karetaker admin screen, WP-CLI, or an optional signed REST status endpoint
+* **Visibility is pull**: the Karetaker admin screen and WP-CLI
 * **Notification is push**: email to the site owner, on ACT-severity events only
 * **Optional Slack / Telegram / Discord / Microsoft Teams**: webhooks or Bot API, off until you turn them on
 * **Optional weekly summary**: one short email on Monday mornings, off until you turn it on
-* **Pause alerts** for 1 to 4 hours while you work on the site; one catch-up email afterwards if something needed you
-* **Client report**: printable HTML summary from the Reports tab, emailed to a client only when you press the button
+* **Pause alerts** for an hour while you work on the site; one catch-up email afterwards if something needed you
+* **Your data, your file**: download the activity log as CSV at any time
 * **Hardening is off** until each toggle is switched on
 
 = Who it is for =
 
 * **Site owners** who want to know their site is fine without reading a dashboard every morning
-* **Agencies** handing a site over to a client, who still need to know if something breaks later
-* **Maintenance providers** who need one read-only status endpoint per site instead of another login
+* **Freelancers and agencies** handing a site over to a client, who still need to know if something breaks later
 
 = It is deliberately not =
 
@@ -69,12 +68,6 @@ requested.
 * A malware signature scanner
 * A login lockout or hide-login product by default
 * A writer of `wp-config.php`, `.htaccess`, or server config
-
-= Agency status endpoint =
-
-An optional read-only endpoint at `/wp-json/karetaker/v1/status` stays off until you
-generate a token. The token never grants remote control, status only. Regenerating it
-invalidates the old one.
 
 = Kill switch =
 
@@ -110,7 +103,7 @@ describe the services Karetaker can connect to.
 
 1. Upload the `karetaker` folder to `/wp-content/plugins/`, or install the zip via Plugins → Add New → Upload.
 2. Activate through the Plugins screen.
-3. Open Karetaker in the admin sidebar to review overview, activity, harden toggles, and settings (alert email, trusted proxies, agency token).
+3. Open Karetaker in the admin sidebar. The one-minute setup asks where alerts go and what kind of site this is, runs a first check, and offers three safe protections.
 
 == Frequently Asked Questions ==
 
@@ -121,18 +114,19 @@ No. Karetaker watches and alerts. It does not filter HTTP traffic.
 = Will it lock me out of wp-login? =
 
 Not by default. There is no login lockout or renamed login URL in the default set.
-Hardening toggles are opt-in and reversible from Karetaker → Harden.
+Hardening toggles are opt-in and reversible from Karetaker → Protection.
 
 = How do I stop it immediately? =
 
 Define `KARETAKER_DISABLE` as true in `wp-config.php`, or create
 `wp-content/karetaker-disable`. The plugin then boots nothing.
 
-= What does the agency token do? =
+= What happened to Advanced mode? =
 
-It unlocks a read-only JSON status endpoint for monitoring scripts. Empty token = off.
-Regenerating invalidates the old token. Authenticate with `Authorization: Bearer <token>`
-only (query-string tokens are not accepted). It cannot change settings or run scans remotely.
+Agency tools (issue tracking with owners, incident cases, client reports, role access and
+the read-only API) are no longer part of Karetaker. Everything that watches your site,
+alerts you and protects it stays here and stays free: every check, every alert channel,
+the weekly summary, all protections and the activity export.
 
 = Does uninstall leave data behind? =
 
@@ -140,16 +134,16 @@ No. Uninstall drops the events table, plugin options, and cron hooks.
 
 = What if I think the site was hacked? =
 
-Open Karetaker → Overview → “I think this site was hacked”. That runs a deeper multi-pass
-scan and shows a checklist (admins, plugins, uploads PHP, integrity, Guard, passwords).
-It does not clean malware or lock anyone out; it is a guided review, not a clean certificate.
+Run `wp karetaker incident`. That runs a deeper multi-pass scan and shows a checklist
+(admins, plugins, uploads PHP, integrity, Guard, passwords). If you think someone else is
+logged in, use Karetaker → Protection → "Sign out all administrators". Karetaker does not
+clean malware or lock anyone out; it is a guided review, not a clean certificate.
 
 = Can hosting providers use this? =
 
 Yes. Karetaker does not ship a WAF, does not lock logins by default, and does not write
-server config. Hosts can poll the optional agency status endpoint (Bearer token) and read
-`host_profile` in the JSON. Site Health also reports scan freshness, Guard flags, and the
-host safety profile. Kill switch: `KARETAKER_DISABLE` or `wp-content/karetaker-disable`.
+server config. `wp karetaker status` prints the host safety profile as JSON, and Site
+Health reports scan freshness, Guard flags, and the same profile. Kill switch: `KARETAKER_DISABLE` or `wp-content/karetaker-disable`.
 
 = What data leaves the site? =
 
@@ -158,10 +152,8 @@ checksums (same family of APIs WordPress itself uses). Optional features you tur
 yourself may also leave the site: ACT alert emails (to the address you choose), an ACT
 webhook POST (to the URL you set), Slack Incoming Webhooks, Telegram Bot API, Discord and
 Microsoft Teams webhook messages (when enabled), the weekly summary and end-of-pause emails
-(when enabled), client report emails (only to the address you enter, when you press Email to
-client), vulnerability lookup requests to wpvulnerability.net (plugin slug only,
-when enabled under Settings), and the agency status endpoint (only when a token is
-generated; read-only, inbound). The daily "What Google sees" check requests your own home
+(when enabled), and vulnerability lookup requests to wpvulnerability.net (plugin slug only,
+when enabled under Settings). The daily "What Google sees" check requests your own home
 page twice (once with a Googlebot user agent); it does not contact Google. Karetaker does not phone home to Team Krikir and does
 not load third-party scripts or ads.
 
@@ -180,10 +172,17 @@ When you enable those optional services, you also accept their terms:
 3. Home on a quiet week, because staying silent is the point.
 4. Activity: everything Karetaker recorded, grouped by day and written in plain words.
 5. Protection: optional protections you can switch on or off. None of them can lock you out.
-6. Settings: where alerts go, the weekly summary, a one-hour pause, site type, and Advanced mode for agencies.
+6. Settings: where alerts go, the weekly summary, a one-hour pause, site type, and privacy and data options.
 7. The one-minute setup that runs on first activation.
 
 == Changelog ==
+
+= 1.1.0 =
+* Advanced mode is gone. Agency tools (issue tracking with owners, detailed monitoring, incident cases, client reports, role access and the read-only API) are no longer part of Karetaker.
+* Settings now holds the vulnerability lookup switch, how many events to keep, trusted proxies, a test alert button and email previews.
+* Protection has "Sign out all administrators" for when you think someone else is logged in.
+* Activity has a Download CSV button.
+* Developer: new filters karetaker_settings_defaults and karetaker_admin_setting.
 
 = 1.0.2 =
 * Developer: an extension API (actions, filters and a JavaScript bridge) so add-ons can extend Karetaker without editing it.
@@ -210,6 +209,9 @@ First public release.
 * WP-CLI commands and an emergency off switch.
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Advanced mode is removed. Every check, alert and protection stays; Settings gains privacy and data options.
 
 = 1.0.2 =
 Maintenance release with extension hooks for developers. No visible changes.
