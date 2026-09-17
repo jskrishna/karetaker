@@ -7,25 +7,13 @@ VERSION="$(grep -E "^\s*\* Version:" "$ROOT/karetaker.php" | head -1 | sed -E 's
 OUT="${1:-$ROOT/dist/karetaker-${VERSION}.zip}"
 mkdir -p "$(dirname "$OUT")" "$STAGE"
 
-rsync -a \
-  --exclude='.*' \
-  --exclude='*.md' \
-  --exclude='vendor' \
-  --exclude='node_modules' \
-  --exclude='composer.json' \
-  --exclude='composer.lock' \
-  --exclude='phpcs.xml.dist' \
-  --exclude='phpcs.xml' \
-  --exclude='docs' \
-  --exclude='tools' \
-  --exclude='tests' \
-  --exclude='dist' \
-  --exclude='assets/banner-*.png' \
-  --exclude='assets/icon-*.png' \
-  --exclude='assets/icon.svg' \
-  --exclude='assets/logo-*.png' \
-  --exclude='assets/screenshot-*.png' \
-  "$ROOT/" "$STAGE/"
+# Ship only files tracked in git, minus development and WordPress.org listing files.
+git -C "$ROOT" ls-files \
+  | grep -vE '^\.|/\.' \
+  | grep -vE '\.md$' \
+  | grep -vE '^(composer\.(json|lock)|phpcs\.xml(\.dist)?|tools/)' \
+  | grep -vE '^assets/(banner-.*\.png|icon-.*\.png|icon\.svg|logo-.*\.png|screenshot-.*\.png)$' \
+  | rsync -a --files-from=- "$ROOT/" "$STAGE/"
 
 python3 - "$STAGE/karetaker.php" <<'PY'
 from pathlib import Path

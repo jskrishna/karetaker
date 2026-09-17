@@ -2,12 +2,9 @@
 <ruleset name="Karetaker">
 	<description>WordPress Coding Standards for Karetaker.</description>
 
-	<file>.</file>
-	<exclude-pattern>*/vendor/*</exclude-pattern>
-	<exclude-pattern>*/.reference/*</exclude-pattern>
-	<exclude-pattern>*/.*/*</exclude-pattern>
-	<exclude-pattern>*/tools/*</exclude-pattern>
-	<exclude-pattern>*/docs/*</exclude-pattern>
+	<file>karetaker.php</file>
+	<file>uninstall.php</file>
+	<file>includes</file>
 	<exclude-pattern>*/includes/admin/partials/*</exclude-pattern>
 
 	<arg name="extensions" value="php"/>
